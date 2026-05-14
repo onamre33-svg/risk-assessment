@@ -31,12 +31,12 @@ select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://
 .flash-error{background:#fee2e2;color:#991b1b}
 .flash-success{background:#d1fae5;color:#065f46}
 .info-text{font-size:12px;color:#94a3b8;text-align:center;margin-top:16px;line-height:1.6}
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
-.role-btn{padding:12px 8px;border:1.5px solid #e2e8f0;border-radius:10px;text-align:center;cursor:pointer;transition:all .15s;background:#f8fafc;display:block}
+.role-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px}
+.role-btn{padding:10px 6px;border:1.5px solid #e2e8f0;border-radius:10px;text-align:center;cursor:pointer;transition:all .15s;background:#f8fafc;display:block}
 .role-btn input{display:none}
 .role-btn.selected{border-color:#1a73e8;background:#eff6ff}
-.role-btn .role-icon{font-size:22px;margin-bottom:4px}
-.role-btn .role-name{font-size:13px;font-weight:600;color:#374151}
+.role-btn .role-icon{font-size:20px;margin-bottom:3px}
+.role-btn .role-name{font-size:11px;font-weight:600;color:#374151}
 .role-btn.selected .role-name{color:#1a73e8}
 </style>
 </head>
@@ -105,11 +105,16 @@ select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://
             <div class="role-icon">🏢</div>
             <div class="role-name">팀 담당자</div>
           </label>
+          <label class="role-btn" id="role-hse" onclick="selectRole('hse')">
+            <input type="radio" name="role" value="hse">
+            <div class="role-icon">🛡️</div>
+            <div class="role-name">HSE 안전</div>
+          </label>
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">소속 팀</label>
-        <select class="form-input" name="team_id" required>
+        <label class="form-label">소속 팀 <span style="color:#94a3b8;font-weight:400">(HSE는 선택)</span></label>
+        <select class="form-input" name="team_id">
           <option value="">팀을 선택하세요</option>
           {% for team in teams %}
           <option value="{{ team.id }}">{{ team.name }}</option>
@@ -134,8 +139,9 @@ function switchTab(tab) {
   document.getElementById('panel-register').classList.toggle('active', tab === 'register');
 }
 function selectRole(val) {
-  document.getElementById('role-engineer').classList.toggle('selected', val === 'engineer');
-  document.getElementById('role-manager').classList.toggle('selected', val === 'manager');
+  ['engineer','manager','hse'].forEach(r => {
+    document.getElementById('role-' + r).classList.toggle('selected', r === val);
+  });
   document.querySelector(`input[value="${val}"]`).checked = true;
 }
 if (location.search.includes('tab=register')) switchTab('register');

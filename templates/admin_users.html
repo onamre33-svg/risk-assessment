@@ -36,9 +36,8 @@
   .role-master { background: #fce4ec; color: #c62828; }
   .role-manager { background: #e3f2fd; color: #1565c0; }
   .role-engineer { background: #e8f5e9; color: #2e7d32; }
+  .role-hse { background: #e8f5e9; color: #1b5e20; }
   .action-btns { display: flex; gap: 6px; }
-
-  /* 모달 */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
   .modal-overlay.active { display: flex; }
   .modal { background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
@@ -107,8 +106,9 @@
         <div class="form-group">
           <label>역할</label>
           <select name="role">
-            <option value="engineer">엔지니어</option>
-            <option value="manager">팀담당자</option>
+            <option value="engineer">⚙️ 엔지니어</option>
+            <option value="manager">🔧 팀담당자</option>
+            <option value="hse">🛡️ HSE 안전</option>
           </select>
         </div>
         <div class="form-group">
@@ -150,6 +150,7 @@
               <span class="role-badge role-{{ user.role }}">
                 {% if user.role == 'master' %}👑 마스터
                 {% elif user.role == 'manager' %}🔧 담당자
+                {% elif user.role == 'hse' %}🛡️ HSE
                 {% else %}⚙️ 엔지니어{% endif %}
               </span>
             </td>
@@ -193,6 +194,7 @@
       <select id="edit_role">
         <option value="engineer">⚙️ 엔지니어</option>
         <option value="manager">🔧 팀담당자</option>
+        <option value="hse">🛡️ HSE 안전</option>
       </select>
     </div>
     <div class="form-group" style="margin-top:12px;">
@@ -220,19 +222,15 @@ function openEditModal(uid, name, role, teamId) {
   teamSelect.value = teamId ? String(teamId) : '';
   document.getElementById('editModal').classList.add('active');
 }
-
 function closeEditModal() {
   document.getElementById('editModal').classList.remove('active');
 }
-
 async function saveEdit() {
   const uid = document.getElementById('edit_uid').value;
   const name = document.getElementById('edit_name').value.trim();
   const role = document.getElementById('edit_role').value;
   const teamId = document.getElementById('edit_team').value || null;
-
   if (!name) { alert('이름을 입력해주세요.'); return; }
-
   const res = await fetch(`/admin/users/${uid}/edit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -246,8 +244,6 @@ async function saveEdit() {
     alert('오류: ' + (data.error || '알 수 없는 오류'));
   }
 }
-
-// 모달 바깥 클릭 시 닫기
 document.getElementById('editModal').addEventListener('click', function(e) {
   if (e.target === this) closeEditModal();
 });

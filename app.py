@@ -70,7 +70,6 @@ def init_db():
         is_read INTEGER DEFAULT 0,
         created_at TEXT DEFAULT to_char(NOW(),'YYYY-MM-DD HH24:MI:SS')
     )""")
-    # 기존 DB에 컬럼 없으면 추가
     try:
         c.execute("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS sign_responsible TEXT")
     except:
@@ -157,7 +156,7 @@ def register():
         flash('비밀번호가 일치하지 않습니다.', 'error')
         conn.close()
         return render_template('login.html', teams=teams)
-    if role not in ('engineer', 'manager'):
+    if role not in ('engineer', 'manager', 'hse'):
         role = 'engineer'
 
     c.execute("SELECT id FROM users WHERE username=%s", (username,))
@@ -225,6 +224,19 @@ def dashboard():
         conn.close()
         return render_template('dashboard_manager.html', u=u, assessments=assessments, stats=stats)
 
+    elif u['role'] == 'hse':
+        c.execute('''SELECT a.*, u.name as engineer_name, t.name as team_name
+            FROM assessments a JOIN users u ON a.engineer_id=u.id
+            JOIN teams t ON a.team_id=t.id ORDER BY a.submitted_at DESC''')
+        assessments = fetchall(c)
+        c.execute("SELECT COUNT(*) FROM assessments"); stats_total = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments WHERE status='pending'"); stats_pending = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments WHERE status='approved'"); stats_approved = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments WHERE status='rejected'"); stats_rejected = c.fetchone()[0]
+        stats = {'total': stats_total, 'pending': stats_pending, 'approved': stats_approved, 'rejected': stats_rejected}
+        conn.close()
+        return render_template('dashboard_hse.html', u=u, assessments=assessments, stats=stats)
+
     else:
         c.execute('''SELECT a.*, t.name as team_name FROM assessments a
             JOIN teams t ON a.team_id=t.id WHERE a.engineer_id=%s
@@ -276,11 +288,19 @@ def new_assessment():
         if team and team['manager_id']:
             add_notification(team['manager_id'],
                 f"[승인 요청] {u['name']}님이 위험성평가를 제출했습니다.", assessment_id)
+
         c.execute("SELECT id FROM users WHERE role='master'")
         masters = fetchall(c)
         for m in masters:
             add_notification(m['id'],
                 f"[새 평가] {u['name']}님 위험성평가 제출 ({data.get('work_place','')})", assessment_id)
+
+        # HSE 전체 알림
+        c.execute("SELECT id FROM users WHERE role='hse'")
+        hse_users = fetchall(c)
+        for h in hse_users:
+            add_notification(h['id'],
+                f"[HSE] {u['name']}님 위험성평가 제출 ({data.get('work_place','')})", assessment_id)
 
         conn.commit()
         conn.close()
@@ -314,9 +334,9 @@ def view_assessment(aid):
         return "권한 없음", 403
     if u['role'] == 'manager' and a['team_id'] != u['team_id']:
         return "권한 없음", 403
+    # hse, master 는 모두 열람 가능
     pre = json.loads(a['pre_check'] or '{}')
     site = json.loads(a['site_check'] or '{}')
-    # 승인자 이름 조회
     reviewer_name = None
     if a['reviewer_id']:
         conn2 = get_db()
@@ -435,13 +455,12 @@ def admin_edit_user(uid):
     name = data.get('name', '').strip()
     conn = get_db()
     c = conn.cursor()
-    # master 계정은 수정 불가
     c.execute("SELECT role FROM users WHERE id=%s", (uid,))
     target = fetchone(c)
     if not target or target['role'] == 'master':
         conn.close()
         return jsonify({'error': '마스터 계정은 수정할 수 없습니다.'}), 403
-    if role in ('engineer', 'manager', 'master'):
+    if role in ('engineer', 'manager', 'hse', 'master'):
         c.execute("UPDATE users SET team_id=%s, role=%s, name=%s WHERE id=%s",
                   (team_id, role, name, uid))
         if role == 'manager' and team_id:
@@ -544,7 +563,6 @@ self.addEventListener("fetch", e => {
 """
     return Response(sw_code, mimetype='application/javascript')
 
-# Render 서버에서 자동 DB 초기화
 with app.app_context():
     init_db()
 

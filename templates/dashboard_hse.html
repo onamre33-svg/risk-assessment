@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}HSE 안전 대시보드{% endblock %}
+{% block header_title %}🛡️ HSE 안전 현황{% endblock %}
+{% block content %}
+
+<div style="background:linear-gradient(135deg,#1b5e20,#2e7d32);border-radius:14px;padding:16px;margin-bottom:16px;color:white;">
+  <div style="font-size:13px;opacity:0.85">안녕하세요, {{ u.name }}님 (HSE 안전)</div>
+  <div style="font-size:12px;opacity:0.7;margin-top:2px">모든 팀의 위험성평가를 열람할 수 있습니다</div>
+</div>
+
+<!-- 통계 -->
+<div style="display:flex;gap:10px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px">
+  <div style="background:#eff6ff;border-radius:12px;padding:14px 18px;text-align:center;min-width:80px">
+    <div style="font-size:22px;font-weight:700;color:#1a73e8">{{ stats.total }}</div>
+    <div style="font-size:11px;color:#64748b;margin-top:2px">전체</div>
+  </div>
+  <div style="background:#fef3c7;border-radius:12px;padding:14px 18px;text-align:center;min-width:80px">
+    <div style="font-size:22px;font-weight:700;color:#92400e">{{ stats.pending }}</div>
+    <div style="font-size:11px;color:#64748b;margin-top:2px">대기 중</div>
+  </div>
+  <div style="background:#d1fae5;border-radius:12px;padding:14px 18px;text-align:center;min-width:80px">
+    <div style="font-size:22px;font-weight:700;color:#065f46">{{ stats.approved }}</div>
+    <div style="font-size:11px;color:#64748b;margin-top:2px">승인</div>
+  </div>
+  <div style="background:#fee2e2;border-radius:12px;padding:14px 18px;text-align:center;min-width:80px">
+    <div style="font-size:22px;font-weight:700;color:#991b1b">{{ stats.rejected }}</div>
+    <div style="font-size:11px;color:#64748b;margin-top:2px">반려</div>
+  </div>
+</div>
+
+<!-- 필터 -->
+<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px">
+  <button onclick="filterStatus('all')" id="filter-all"
+    style="padding:7px 16px;border-radius:20px;border:none;background:#1a73e8;color:white;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
+    전체
+  </button>
+  <button onclick="filterStatus('pending')" id="filter-pending"
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
+    ⏳ 대기
+  </button>
+  <button onclick="filterStatus('approved')" id="filter-approved"
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
+    ✅ 승인
+  </button>
+  <button onclick="filterStatus('rejected')" id="filter-rejected"
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
+    ❌ 반려
+  </button>
+</div>
+
+<!-- 평가 목록 -->
+{% if assessments %}
+  {% for a in assessments %}
+  <a class="list-item assessment-item" href="/assessment/{{ a.id }}" data-status="{{ a.status }}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div class="list-item-title">{{ a.work_name or '작업명 미입력' }}</div>
+      {% if a.status == 'pending' %}
+        <span class="badge badge-pending">⏳ 대기</span>
+      {% elif a.status == 'approved' %}
+        <span class="badge badge-approved">✅ 승인</span>
+      {% else %}
+        <span class="badge badge-rejected">❌ 반려</span>
+      {% endif %}
+    </div>
+    <div class="list-item-meta">
+      <span>👷 {{ a.engineer_name }}</span>
+      <span>🏢 {{ a.team_name }}</span>
+      <span>📍 {{ a.work_place }}</span>
+      <span>📅 {{ a.work_date }}</span>
+    </div>
+    {% if a.status == 'rejected' and a.reject_reason %}
+    <div style="margin-top:8px;padding:8px 10px;background:#fee2e2;border-radius:8px;font-size:13px;color:#991b1b">
+      💬 반려 사유: {{ a.reject_reason }}
+    </div>
+    {% endif %}
+  </a>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <div class="empty-text">제출된 위험성평가가 없습니다</div>
+  </div>
+{% endif %}
+
+<script>
+function filterStatus(status) {
+  // 버튼 스타일 업데이트
+  ['all','pending','approved','rejected'].forEach(s => {
+    const btn = document.getElementById('filter-' + s);
+    if (s === status) {
+      btn.style.background = '#1a73e8';
+      btn.style.color = 'white';
+      btn.style.border = 'none';
+    } else {
+      btn.style.background = 'white';
+      btn.style.color = '#666';
+      btn.style.border = '1.5px solid #e0e0e0';
+    }
+  });
+  // 항목 필터링
+  document.querySelectorAll('.assessment-item').forEach(el => {
+    if (status === 'all' || el.dataset.status === status) {
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+</script>
+{% endblock %}

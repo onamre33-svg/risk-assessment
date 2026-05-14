@@ -14,67 +14,55 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#f4f6f9;color:#1e293b;font-size:15px;line-height:1.6}
 
-/* 상단 헤더 */
 .header{background:#1a73e8;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .header h1{font-size:17px;font-weight:600}
 .header-right{display:flex;align-items:center;gap:12px}
 .notif-btn{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;position:relative;padding:4px}
 .notif-badge{position:absolute;top:0;right:0;background:#ef4444;color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700}
 
-/* 바텀 네비 */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
 .bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;color:#94a3b8;text-decoration:none;font-size:11px;gap:3px;transition:color .15s}
 .bottom-nav a.active,.bottom-nav a:hover{color:#1a73e8}
 .bottom-nav .nav-icon{font-size:22px}
 
-/* 컨텐츠 */
 .content{padding:16px 16px 80px}
 
-/* 카드 */
 .card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .card-title{font-size:15px;font-weight:600;margin-bottom:12px;color:#1e293b}
 
-/* 통계 그리드 */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .stat-card{background:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .stat-num{font-size:28px;font-weight:700;color:#1a73e8}
 .stat-label{font-size:12px;color:#64748b;margin-top:2px}
 
-/* 상태 배지 */
 .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;gap:4px}
 .badge-pending{background:#fef3c7;color:#92400e}
 .badge-approved{background:#d1fae5;color:#065f46}
 .badge-rejected{background:#fee2e2;color:#991b1b}
 
-/* 리스트 아이템 */
 .list-item{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;text-decoration:none;color:inherit;display:block;transition:transform .1s}
 .list-item:active{transform:scale(.98)}
 .list-item-title{font-weight:600;font-size:15px;margin-bottom:4px}
 .list-item-meta{font-size:12px;color:#64748b;display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
 
-/* 폼 */
 .form-group{margin-bottom:16px}
 .form-label{font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block}
 .form-input{width:100%;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;background:#fff;transition:border-color .15s;-webkit-appearance:none}
 .form-input:focus{outline:none;border-color:#1a73e8;box-shadow:0 0 0 3px rgba(26,115,232,.12)}
 select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2364748b' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
 
-/* 체크박스 그룹 */
 .check-group{display:flex;flex-direction:column;gap:8px}
 .check-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;cursor:pointer}
 .check-item input[type=checkbox]{width:18px;height:18px;accent-color:#1a73e8;flex-shrink:0;margin-top:2px}
 .check-item label{font-size:14px;color:#374151;cursor:pointer;line-height:1.5}
 
-/* 섹션 헤더 */
 .section-header{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:12px 16px;border-radius:10px;margin-bottom:12px}
 .section-header h3{font-size:15px;font-weight:600}
 .section-header p{font-size:12px;opacity:.85;margin-top:2px}
 
-/* 위험등급 선택 */
 .risk-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .risk-select{padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff;-webkit-appearance:none;width:100%}
 
-/* 버튼 */
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .15s;width:100%}
 .btn-primary{background:#1a73e8;color:#fff}
 .btn-primary:active{background:#1557b0}
@@ -83,7 +71,6 @@ select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://
 .btn-outline{background:#fff;color:#1a73e8;border:1.5px solid #1a73e8}
 .btn-sm{padding:8px 16px;font-size:13px;border-radius:8px;width:auto}
 
-/* 알림 패널 */
 .notif-panel{display:none;position:fixed;top:56px;right:0;left:0;background:#fff;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,.15);max-height:70vh;overflow-y:auto}
 .notif-panel.open{display:block}
 .notif-item{padding:14px 16px;border-bottom:1px solid #f1f5f9}
@@ -92,24 +79,20 @@ select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://
 .notif-time{font-size:11px;color:#94a3b8;margin-top:3px}
 .notif-unread{background:#eff6ff}
 
-/* 빈 상태 */
 .empty-state{text-align:center;padding:48px 20px;color:#94a3b8}
 .empty-icon{font-size:48px;margin-bottom:12px}
 .empty-text{font-size:15px}
 
-/* 플래시 메시지 */
 .flash{padding:12px 16px;border-radius:10px;margin-bottom:14px;font-size:14px}
 .flash-info{background:#dbeafe;color:#1e40af}
 .flash-success{background:#d1fae5;color:#065f46}
 .flash-error{background:#fee2e2;color:#991b1b}
 
-/* 상세 정보 테이블 */
 .info-table{width:100%;border-collapse:collapse}
 .info-table tr{border-bottom:1px solid #f1f5f9}
 .info-table td{padding:10px 0;font-size:14px}
 .info-table td:first-child{color:#64748b;width:40%;font-weight:500}
 
-/* FAB 버튼 */
 .fab{position:fixed;bottom:80px;right:20px;width:56px;height:56px;background:#1a73e8;color:#fff;border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 14px rgba(26,115,232,.4);cursor:pointer;border:none;text-decoration:none;z-index:99}
 
 @media(min-width:768px){
@@ -132,7 +115,6 @@ select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://
   </div>
 </header>
 
-<!-- 알림 패널 -->
 <div class="notif-panel" id="notif-panel">
   <div id="notif-list" style="padding:8px 0">
     <div style="padding:20px;text-align:center;color:#94a3b8;font-size:14px">불러오는 중...</div>
@@ -155,12 +137,28 @@ select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://
   <a href="/assessment/new" class="{% if request.path == '/assessment/new' %}active{% endif %}">
     <span class="nav-icon">✏️</span>새 작성
   </a>
+  <a href="/profile" class="{% if request.path == '/profile' %}active{% endif %}">
+    <span class="nav-icon">👤</span>내 정보
+  </a>
   {% elif session.role == 'manager' %}
   <a href="/" class="{% if request.path == '/' %}active{% endif %}">
     <span class="nav-icon">🏠</span>홈
   </a>
   <a href="/" class="">
     <span class="nav-icon">📋</span>검토 목록
+  </a>
+  <a href="/profile" class="{% if request.path == '/profile' %}active{% endif %}">
+    <span class="nav-icon">👤</span>내 정보
+  </a>
+  {% elif session.role == 'hse' %}
+  <a href="/" class="{% if request.path == '/' %}active{% endif %}">
+    <span class="nav-icon">🏠</span>홈
+  </a>
+  <a href="/" class="">
+    <span class="nav-icon">🛡️</span>전체 현황
+  </a>
+  <a href="/profile" class="{% if request.path == '/profile' %}active{% endif %}">
+    <span class="nav-icon">👤</span>내 정보
   </a>
   {% else %}
   <a href="/" class="{% if request.path == '/' %}active{% endif %}">
@@ -174,7 +172,6 @@ select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://
 {% endif %}
 
 <script>
-// 알림 토글
 function toggleNotif() {
   const panel = document.getElementById('notif-panel');
   panel.classList.toggle('open');
@@ -207,7 +204,6 @@ function loadNotifications() {
     });
 }
 
-// 알림 카운트
 function checkNotifCount() {
   fetch('/api/notifications/count')
     .then(r => r.json())
@@ -226,7 +222,6 @@ checkNotifCount();
 setInterval(checkNotifCount, 30000);
 {% endif %}
 
-// PWA 서비스워커 등록
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
