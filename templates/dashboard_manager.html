@@ -3,6 +3,18 @@
 {% block header_title %}담당자: {{ u.name }}{% endblock %}
 {% block content %}
 
+<!-- 내 정보 + 호선 추가 버튼 -->
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">
+  <button onclick="openAddTeamModal()"
+    style="display:inline-flex;align-items:center;gap:6px;background:#e8f5e9;color:#2e7d32;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;border:none;cursor:pointer;">
+    🚢 호선 추가
+  </button>
+  <a href="/profile"
+    style="display:inline-flex;align-items:center;gap:6px;background:#e8f0fe;color:#1a73e8;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;">
+    👤 내 정보
+  </a>
+</div>
+
 <div class="stats-grid">
   <div class="stat-card">
     <div class="stat-num" style="color:#f59e0b">{{ stats.pending }}</div>
@@ -14,7 +26,6 @@
   </div>
 </div>
 
-<!-- 승인 대기 먼저 -->
 {% set pending_list = assessments|selectattr('status','eq','pending')|list %}
 {% if pending_list %}
 <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:8px;padding:0 2px">
@@ -36,7 +47,6 @@
 <div style="margin-bottom:20px"></div>
 {% endif %}
 
-<!-- 처리 완료 목록 -->
 {% set done_list = assessments|rejectattr('status','eq','pending')|list %}
 {% if done_list %}
 <div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:8px;padding:0 2px">
@@ -67,4 +77,56 @@
   <div class="empty-text">제출된 위험성평가가 없습니다</div>
 </div>
 {% endif %}
+
+<!-- 호선 추가 모달 -->
+<div id="addTeamModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <div style="font-size:16px;font-weight:700;color:#333;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #e8f0fe;">🚢 호선 추가</div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:6px;">호선 이름</label>
+      <input id="newTeamName" type="text" placeholder="예: 1호선"
+        style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;">
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeAddTeamModal()"
+        style="flex:1;padding:11px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
+        취소
+      </button>
+      <button onclick="submitAddTeam()"
+        style="flex:1;padding:11px;background:#1a73e8;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
+        추가
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openAddTeamModal() {
+  document.getElementById('addTeamModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('newTeamName').focus(), 100);
+}
+function closeAddTeamModal() {
+  document.getElementById('addTeamModal').style.display = 'none';
+  document.getElementById('newTeamName').value = '';
+}
+async function submitAddTeam() {
+  const name = document.getElementById('newTeamName').value.trim();
+  if (!name) { alert('호선 이름을 입력해주세요.'); return; }
+  const res = await fetch('/api/add_team', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name})
+  });
+  const data = await res.json();
+  if (data.status === 'ok') {
+    alert(`"${data.name}" 호선이 추가되었습니다! ✅`);
+    closeAddTeamModal();
+  } else {
+    alert('오류: ' + (data.error || '알 수 없는 오류'));
+  }
+}
+document.getElementById('addTeamModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddTeamModal();
+});
+</script>
 {% endblock %}

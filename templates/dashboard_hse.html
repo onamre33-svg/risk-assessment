@@ -8,6 +8,18 @@
   <div style="font-size:12px;opacity:0.7;margin-top:2px">모든 팀의 위험성평가를 열람할 수 있습니다</div>
 </div>
 
+<!-- 호선 추가 + 내 정보 버튼 -->
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">
+  <button onclick="openAddTeamModal()"
+    style="display:inline-flex;align-items:center;gap:6px;background:#e8f5e9;color:#2e7d32;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;border:none;cursor:pointer;">
+    🚢 호선 추가
+  </button>
+  <a href="/profile"
+    style="display:inline-flex;align-items:center;gap:6px;background:#e8f0fe;color:#1a73e8;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;">
+    👤 내 정보
+  </a>
+</div>
+
 <!-- 통계 -->
 <div style="display:flex;gap:10px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px">
   <div style="background:#eff6ff;border-radius:12px;padding:14px 18px;text-align:center;min-width:80px">
@@ -31,21 +43,13 @@
 <!-- 필터 -->
 <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px">
   <button onclick="filterStatus('all')" id="filter-all"
-    style="padding:7px 16px;border-radius:20px;border:none;background:#1a73e8;color:white;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
-    전체
-  </button>
+    style="padding:7px 16px;border-radius:20px;border:none;background:#1a73e8;color:white;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">전체</button>
   <button onclick="filterStatus('pending')" id="filter-pending"
-    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
-    ⏳ 대기
-  </button>
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⏳ 대기</button>
   <button onclick="filterStatus('approved')" id="filter-approved"
-    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
-    ✅ 승인
-  </button>
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">✅ 승인</button>
   <button onclick="filterStatus('rejected')" id="filter-rejected"
-    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
-    ❌ 반려
-  </button>
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">❌ 반려</button>
 </div>
 
 <!-- 평가 목록 -->
@@ -64,7 +68,7 @@
     </div>
     <div class="list-item-meta">
       <span>👷 {{ a.engineer_name }}</span>
-      <span>🏢 {{ a.team_name }}</span>
+      <span>🚢 {{ a.team_name }}</span>
       <span>📍 {{ a.work_place }}</span>
       <span>📅 {{ a.work_date }}</span>
     </div>
@@ -82,29 +86,61 @@
   </div>
 {% endif %}
 
+<!-- 호선 추가 모달 -->
+<div id="addTeamModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <div style="font-size:16px;font-weight:700;color:#333;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #e8f0fe;">🚢 호선 추가</div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:6px;">호선 이름</label>
+      <input id="newTeamName" type="text" placeholder="예: 1호선"
+        style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;">
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeAddTeamModal()"
+        style="flex:1;padding:11px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">취소</button>
+      <button onclick="submitAddTeam()"
+        style="flex:1;padding:11px;background:#1a73e8;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">추가</button>
+    </div>
+  </div>
+</div>
+
 <script>
 function filterStatus(status) {
-  // 버튼 스타일 업데이트
   ['all','pending','approved','rejected'].forEach(s => {
     const btn = document.getElementById('filter-' + s);
-    if (s === status) {
-      btn.style.background = '#1a73e8';
-      btn.style.color = 'white';
-      btn.style.border = 'none';
-    } else {
-      btn.style.background = 'white';
-      btn.style.color = '#666';
-      btn.style.border = '1.5px solid #e0e0e0';
-    }
+    if (s === status) { btn.style.background='#1a73e8'; btn.style.color='white'; btn.style.border='none'; }
+    else { btn.style.background='white'; btn.style.color='#666'; btn.style.border='1.5px solid #e0e0e0'; }
   });
-  // 항목 필터링
   document.querySelectorAll('.assessment-item').forEach(el => {
-    if (status === 'all' || el.dataset.status === status) {
-      el.style.display = 'block';
-    } else {
-      el.style.display = 'none';
-    }
+    el.style.display = (status==='all' || el.dataset.status===status) ? 'block' : 'none';
   });
 }
+function openAddTeamModal() {
+  document.getElementById('addTeamModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('newTeamName').focus(), 100);
+}
+function closeAddTeamModal() {
+  document.getElementById('addTeamModal').style.display = 'none';
+  document.getElementById('newTeamName').value = '';
+}
+async function submitAddTeam() {
+  const name = document.getElementById('newTeamName').value.trim();
+  if (!name) { alert('호선 이름을 입력해주세요.'); return; }
+  const res = await fetch('/api/add_team', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name})
+  });
+  const data = await res.json();
+  if (data.status === 'ok') {
+    alert(`"${data.name}" 호선이 추가되었습니다! ✅`);
+    closeAddTeamModal();
+  } else {
+    alert('오류: ' + (data.error || '알 수 없는 오류'));
+  }
+}
+document.getElementById('addTeamModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddTeamModal();
+});
 </script>
 {% endblock %}

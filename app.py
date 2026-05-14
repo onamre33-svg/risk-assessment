@@ -502,6 +502,28 @@ def admin_users():
     conn.close()
     return render_template('admin_users.html', u=u, users=users, teams=teams)
 
+# ── 호선 추가 (마스터/담당자/HSE) ───────────────────────────
+@app.route('/api/add_team', methods=['POST'])
+def api_add_team():
+    u = current_user()
+    if not u or u['role'] not in ('master', 'manager', 'hse'):
+        return jsonify({'error': '권한 없음'}), 403
+    data = request.get_json() or {}
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'error': '호선 이름을 입력해주세요.'}), 400
+    conn = get_db()
+    c = conn.cursor()
+    try:
+        c.execute("INSERT INTO teams (name) VALUES (%s) RETURNING id, name", (name,))
+        row = c.fetchone()
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'ok', 'id': row[0], 'name': row[1]})
+    except Exception as e:
+        conn.close()
+        return jsonify({'error': str(e)}), 500
+
 # ── 마스터: 사용자 수정 ──────────────────────────────────
 @app.route('/admin/users/<int:uid>/edit', methods=['POST'])
 def admin_edit_user(uid):
