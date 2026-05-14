@@ -69,24 +69,39 @@
   </div>
 {% endif %}
 
-<!-- FAB: 온라인/오프라인 자동 분기 -->
+<!-- FAB 버튼 -->
 <a href="/assessment/new" class="fab" id="fab-btn" title="새 위험성평가 작성">✏️</a>
 
 <script>
-// 온라인이면 일반 폼, 오프라인이면 오프라인 전용 폼으로 이동
+// 온라인/오프라인 FAB 분기
 function updateFab() {
   const btn = document.getElementById('fab-btn');
   if (!navigator.onLine) {
-    btn.href = '/static/offline_form.html';
-    btn.title = '오프라인 작성';
-    btn.textContent = '✏️';
     btn.style.background = '#f59e0b';
+    btn.onclick = function(e) {
+      e.preventDefault();
+      openOfflineForm();
+    };
   } else {
-    btn.href = '/assessment/new';
-    btn.title = '새 위험성평가 작성';
     btn.style.background = '#1a73e8';
+    btn.onclick = null;
+    btn.href = '/assessment/new';
   }
 }
+
+// localStorage에서 오프라인 폼 꺼내서 새 탭/페이지로 열기
+function openOfflineForm() {
+  const html = localStorage.getItem('offline_form_html');
+  if (!html) {
+    alert('오프라인 폼이 준비되지 않았습니다.\n온라인 상태에서 한번 접속 후 다시 시도해주세요.');
+    return;
+  }
+  // Blob URL로 열기
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.location.href = url;
+}
+
 window.addEventListener('online', updateFab);
 window.addEventListener('offline', updateFab);
 updateFab();

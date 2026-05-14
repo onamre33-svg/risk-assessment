@@ -19,24 +19,21 @@
   window.addEventListener("offline", updateOnline);
   updateOnline();
 
-  // 온라인 상태일 때 assessment/new 페이지를 캐시에 미리 저장
-  function prefetchAssessmentForm() {
+  // 온라인일 때 오프라인 폼 HTML을 localStorage에 저장
+  function saveOfflineForm() {
     if (!navigator.onLine) return;
-    if (!("caches" in window)) return;
-    fetch("/assessment/new", { credentials: "include" })
-      .then(res => {
-        if (res.ok) {
-          caches.open("ra-v2").then(cache => {
-            cache.put("/assessment/new", res);
-          });
-        }
+    fetch("/static/offline_form.html")
+      .then(res => res.text())
+      .then(html => {
+        localStorage.setItem("offline_form_html", html);
+        localStorage.setItem("offline_form_saved_at", new Date().toISOString());
       })
       .catch(() => {});
   }
 
-  // 로그인된 페이지에서 폼 미리 캐시
-  if (document.cookie.includes("session") || document.querySelector(".bottom-nav")) {
-    setTimeout(prefetchAssessmentForm, 2000);
+  // 대시보드에서 자동 저장
+  if (document.querySelector(".bottom-nav")) {
+    setTimeout(saveOfflineForm, 1500);
   }
 
   // 폼 자동 임시 저장 + 오프라인 큐
@@ -91,7 +88,7 @@
     });
   }
 
-  // 온라인 복구 시 대기 중인 항목 자동 제출
+  // 온라인 복구 시 자동 제출
   async function trySyncQueue() {
     const queue = JSON.parse(localStorage.getItem("pending_assessments") || "[]");
     if (!queue.length) return;
@@ -101,8 +98,8 @@
       try {
         const formData = new FormData();
         for (const [k, v] of Object.entries(item.data)) {
-          if (Array.isArray(v)) v.forEach(val => formData.append(k, val));
-          else formData.append(k, v);
+          const vals = Array.isArray(v) ? v : [v];
+          vals.forEach(val => formData.append(k, val));
         }
         const res = await fetch("/assessment/new", {
           method: "POST",
@@ -125,7 +122,6 @@
     }
   }
 
-  // 페이지 로드 시 자동 제출 시도
   if (navigator.onLine) trySyncQueue();
 
   function formToObject(form) {
