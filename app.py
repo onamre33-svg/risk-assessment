@@ -465,6 +465,9 @@ self.addEventListener("fetch", e => {
 """
     return Response(sw_code, mimetype='application/javascript')
 
-if __name__ == '__main__':
+# Render 서버에서 자동 DB 초기화
+with app.app_context():
     init_db()
+
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
