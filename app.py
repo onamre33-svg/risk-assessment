@@ -675,18 +675,8 @@ def manifest():
 
 @app.route('/sw.js')
 def service_worker():
-    from flask import Response
-    sw_code = """
-const CACHE = "risk-v1";
-const OFFLINE_URLS = ["/", "/assessment/new", "/static/css/style.css"];
-self.addEventListener("install", e => {
-    e.waitUntil(caches.open(CACHE).then(c => c.addAll(OFFLINE_URLS)));
-});
-self.addEventListener("fetch", e => {
-    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-});
-"""
-    return Response(sw_code, mimetype='application/javascript')
+    from flask import send_from_directory
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
 
 with app.app_context():
     init_db()
