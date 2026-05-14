@@ -90,7 +90,11 @@
     </form>
     <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px;">
       {% for t in teams %}
-        <span style="background:#e8f0fe; color:#1a73e8; padding:5px 14px; border-radius:20px; font-size:13px; font-weight:600;">🚢 {{ t.name }}</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;background:#e8f0fe;color:#1a73e8;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;">
+          🚢 {{ t.name }}
+          <button onclick="deleteTeam({{ t.id }}, '{{ t.name }}')"
+            style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>
+        </span>
       {% endfor %}
     </div>
   </div>
@@ -237,6 +241,21 @@
 </div>
 
 <script>
+async function deleteTeam(tid, name) {
+  if (!confirm(`"${name}" 호선을 삭제하시겠습니까?\n(소속 평가가 있으면 삭제 불가)`)) return;
+  const res = await fetch(`/api/delete_team/${tid}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  const data = await res.json();
+  if (data.status === 'ok') {
+    alert(`"${name}" 호선이 삭제되었습니다.`);
+    location.reload();
+  } else {
+    alert('오류: ' + (data.error || '알 수 없는 오류'));
+  }
+}
+
 function openEditModal(uid, name, role, teamIds) {
   document.getElementById('edit_uid').value = uid;
   document.getElementById('edit_name').value = name;

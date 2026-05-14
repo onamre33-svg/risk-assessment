@@ -514,6 +514,25 @@ def admin_users():
     conn.close()
     return render_template('admin_users.html', u=u, users=users, teams=teams)
 
+# ── 호선 삭제 (마스터만) ─────────────────────────────────
+@app.route('/api/delete_team/<int:tid>', methods=['POST'])
+def api_delete_team(tid):
+    u = current_user()
+    if not u or u['role'] != 'master':
+        return jsonify({'error': '마스터만 삭제 가능합니다.'}), 403
+    conn = get_db()
+    c = conn.cursor()
+    # 해당 호선에 소속된 평가가 있는지 확인
+    c.execute("SELECT COUNT(*) FROM assessments WHERE team_id=%s", (tid,))
+    cnt = c.fetchone()[0]
+    if cnt > 0:
+        conn.close()
+        return jsonify({'error': f'이 호선에 평가 {cnt}건이 있어 삭제할 수 없습니다.'}), 400
+    c.execute("DELETE FROM teams WHERE id=%s", (tid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'ok'})
+
 # ── 호선 추가 (마스터/담당자/HSE) ───────────────────────────
 @app.route('/api/add_team', methods=['POST'])
 def api_add_team():
