@@ -241,10 +241,10 @@ def dashboard():
         teams = fetchall(c)
         c.execute("SELECT * FROM users")
         users = fetchall(c)
-        c.execute("SELECT COUNT(*) FROM assessments"); stats_total = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM assessments WHERE status='pending'"); stats_pending = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM assessments WHERE status='approved'"); stats_approved = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM assessments WHERE status='rejected'"); stats_rejected = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments a JOIN users u ON a.engineer_id=u.id"); stats_total = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments a JOIN users u ON a.engineer_id=u.id WHERE a.status='pending'"); stats_pending = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments a JOIN users u ON a.engineer_id=u.id WHERE a.status='approved'"); stats_approved = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments a JOIN users u ON a.engineer_id=u.id WHERE a.status='rejected'"); stats_rejected = c.fetchone()[0]
         stats = {'total': stats_total, 'pending': stats_pending, 'approved': stats_approved, 'rejected': stats_rejected}
         conn.close()
         return render_template('dashboard_master.html', u=u, assessments=assessments,
@@ -259,9 +259,13 @@ def dashboard():
                 JOIN teams t ON a.team_id=t.id WHERE a.team_id IN ({placeholders})
                 ORDER BY a.submitted_at DESC''', team_ids)
             assessments = fetchall(c)
-            c.execute(f"SELECT COUNT(*) FROM assessments WHERE team_id IN ({placeholders}) AND status='pending'", team_ids)
+            c.execute(f'''SELECT COUNT(*) FROM assessments a
+                JOIN users u ON a.engineer_id=u.id
+                WHERE a.team_id IN ({placeholders}) AND a.status='pending' ''', team_ids)
             p = c.fetchone()[0]
-            c.execute(f"SELECT COUNT(*) FROM assessments WHERE team_id IN ({placeholders}) AND status='approved'", team_ids)
+            c.execute(f'''SELECT COUNT(*) FROM assessments a
+                JOIN users u ON a.engineer_id=u.id
+                WHERE a.team_id IN ({placeholders}) AND a.status='approved' ''', team_ids)
             a2 = c.fetchone()[0]
         else:
             assessments = []
@@ -276,10 +280,10 @@ def dashboard():
             FROM assessments a JOIN users u ON a.engineer_id=u.id
             JOIN teams t ON a.team_id=t.id ORDER BY a.submitted_at DESC''')
         assessments = fetchall(c)
-        c.execute("SELECT COUNT(*) FROM assessments"); stats_total = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM assessments WHERE status='pending'"); stats_pending = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM assessments WHERE status='approved'"); stats_approved = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM assessments WHERE status='rejected'"); stats_rejected = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments a JOIN users u ON a.engineer_id=u.id"); stats_total = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments a JOIN users u ON a.engineer_id=u.id WHERE a.status='pending'"); stats_pending = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments a JOIN users u ON a.engineer_id=u.id WHERE a.status='approved'"); stats_approved = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM assessments a JOIN users u ON a.engineer_id=u.id WHERE a.status='rejected'"); stats_rejected = c.fetchone()[0]
         stats = {'total': stats_total, 'pending': stats_pending, 'approved': stats_approved, 'rejected': stats_rejected}
         conn.close()
         return render_template('dashboard_hse.html', u=u, assessments=assessments, stats=stats)
