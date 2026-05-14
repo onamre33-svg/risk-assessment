@@ -70,6 +70,11 @@ def init_db():
         is_read INTEGER DEFAULT 0,
         created_at TEXT DEFAULT to_char(NOW(),'YYYY-MM-DD HH24:MI:SS')
     )""")
+    # 기존 DB에 컬럼 없으면 추가
+    try:
+        c.execute("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS sign_responsible TEXT")
+    except:
+        pass
     pw = hashlib.sha256('admin1234'.encode()).hexdigest()
     c.execute("INSERT INTO users (username,password,name,role) VALUES (%s,%s,%s,%s) ON CONFLICT (username) DO NOTHING",
               ('admin', pw, '관리자', 'master'))
