@@ -179,7 +179,7 @@
       ] %}
 
       {% for cat_name, items, measure_key in site_items %}
-      {% for i, (item_key, item_text) in enumerate(items) %}
+      {% for item_key, item_text in items %}{% set i = loop.index0 %}
       <tr>
         {% if i == 0 %}
         <td class="cat-cell" rowspan="{{ items|length }}">{{ cat_name }}</td>
