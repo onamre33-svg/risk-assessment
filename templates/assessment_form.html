@@ -28,6 +28,18 @@
   <div class="card">
     <div class="card-title">📋 기본 정보</div>
     <div class="form-group">
+      <label class="form-label">🚢 호선 선택 <span style="color:red">*</span></label>
+      <select class="form-input" name="team_id" required>
+        <option value="">-- 호선을 선택하세요 --</option>
+        {% for t in my_teams %}
+        <option value="{{ t.id }}">{{ t.name }}</option>
+        {% endfor %}
+      </select>
+      {% if not my_teams %}
+      <div style="font-size:12px;color:#f59e0b;margin-top:6px">⚠️ 소속 호선이 없습니다. 내 정보에서 호선을 선택해주세요.</div>
+      {% endif %}
+    </div>
+    <div class="form-group">
       <label class="form-label">회사명</label>
       <input class="form-input" type="text" name="company" placeholder="회사명 입력" required>
     </div>
@@ -440,7 +452,7 @@
 
 <script>
 // ── 제출 버튼 활성화 검사 ──────────────────────────
-const BASIC_FIELDS = ['company','work_place','work_name','work_date','sign_requester'];
+const BASIC_FIELDS = ['team_id','company','work_place','work_name','work_date','sign_requester'];
 
 // 출입 전 라디오 name 목록
 const PRE_NAMES = [
