@@ -1,18 +1,18 @@
-// 위험성평가 PWA 서비스워커
-const CACHE = "ra-v4";
-const ASSETS = [
-  "/",
-  "/login",
-  "/static/offline_form.html",
-  "/static/style.css",
-  "/static/app.js",
-];
+// 위험성평가 PWA 서비스워커 v5
+const CACHE = "ra-v5";
+const OFFLINE_FORM = "/static/offline_form.html";
 
 self.addEventListener("install", (e) => {
+  // addAll 대신 개별 fetch로 캐시
   e.waitUntil(
-    caches.open(CACHE).then((c) => {
-      // 개별로 캐시 - 하나 실패해도 나머지 계속
-      return Promise.allSettled(ASSETS.map(url => c.add(url).catch(() => {})));
+    caches.open(CACHE).then(async (cache) => {
+      const urls = ["/", "/login", "/static/offline_form.html", "/static/style.css", "/static/app.js"];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) await cache.put(url, res);
+        } catch(e) {}
+      }
     })
   );
   self.skipWaiting();
@@ -31,49 +31,10 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
 
-  const url = new URL(req.url);
-
-  // assessment/new, dashboard 페이지는 캐시 우선 (오프라인 지원)
-  const offlinePages = ["/static/offline_form.html", "/", "/login"];
-  const isOfflinePage = offlinePages.some(p => url.pathname === p || url.pathname.startsWith(p));
-
-  if (isOfflinePage) {
-    e.respondWith(
-      caches.match(req).then((cached) => {
-        // 네트워크 먼저 시도, 실패 시 캐시
-        return fetch(req)
-          .then((res) => {
-            if (res.ok) {
-              const copy = res.clone();
-              caches.open(CACHE).then((c) => c.put(req, copy));
-            }
-            return res;
-          })
-          .catch(() => cached || caches.match("/login"));
-      })
-    );
-    return;
-  }
-
-  // 정적 파일은 캐시 우선
-  if (url.pathname.startsWith("/static/")) {
-    e.respondWith(
-      caches.match(req).then((cached) => {
-        return cached || fetch(req).then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy));
-          return res;
-        });
-      })
-    );
-    return;
-  }
-
-  // 나머지는 네트워크 우선, 실패 시 캐시
   e.respondWith(
     fetch(req)
       .then((res) => {
-        if (url.origin === location.origin && res.ok) {
+        if (res.ok) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy));
         }
