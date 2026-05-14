@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}팀 담당자 대시보드{% endblock %}
+{% block header_title %}담당자: {{ u.name }}{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-num" style="color:#f59e0b">{{ stats.pending }}</div>
+    <div class="stat-label">승인 대기</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="color:#10b981">{{ stats.approved }}</div>
+    <div class="stat-label">승인 완료</div>
+  </div>
+</div>
+
+<!-- 승인 대기 먼저 -->
+{% set pending_list = assessments|selectattr('status','eq','pending')|list %}
+{% if pending_list %}
+<div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:8px;padding:0 2px">
+  ⏳ 승인 대기 ({{ pending_list|length }}건)
+</div>
+{% for a in pending_list %}
+<a class="list-item" href="/assessment/{{ a.id }}" style="border-left:4px solid #f59e0b">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div class="list-item-title">{{ a.work_name or '작업명 미입력' }}</div>
+    <span class="badge badge-pending">⏳ 대기</span>
+  </div>
+  <div class="list-item-meta">
+    <span>👷 {{ a.engineer_name }}</span>
+    <span>📍 {{ a.work_place }}</span>
+    <span>📅 {{ a.work_date }}</span>
+  </div>
+</a>
+{% endfor %}
+<div style="margin-bottom:20px"></div>
+{% endif %}
+
+<!-- 처리 완료 목록 -->
+{% set done_list = assessments|rejectattr('status','eq','pending')|list %}
+{% if done_list %}
+<div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:8px;padding:0 2px">
+  처리 완료 ({{ done_list|length }}건)
+</div>
+{% for a in done_list %}
+<a class="list-item" href="/assessment/{{ a.id }}">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div class="list-item-title">{{ a.work_name or '작업명 미입력' }}</div>
+    {% if a.status == 'approved' %}
+      <span class="badge badge-approved">✅ 승인</span>
+    {% else %}
+      <span class="badge badge-rejected">❌ 반려</span>
+    {% endif %}
+  </div>
+  <div class="list-item-meta">
+    <span>👷 {{ a.engineer_name }}</span>
+    <span>📍 {{ a.work_place }}</span>
+    <span>📅 {{ a.work_date }}</span>
+  </div>
+</a>
+{% endfor %}
+{% endif %}
+
+{% if not assessments %}
+<div class="empty-state">
+  <div class="empty-icon">📭</div>
+  <div class="empty-text">제출된 위험성평가가 없습니다</div>
+</div>
+{% endif %}
+{% endblock %}

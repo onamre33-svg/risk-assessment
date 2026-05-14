@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}평가 상세{% endblock %}
+{% block header_title %}위험성평가 상세{% endblock %}
+{% block content %}
+
+<!-- 상태 배너 -->
+{% if a.status == 'pending' %}
+<div style="background:#fef3c7;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+  <span style="font-size:24px">⏳</span>
+  <div>
+    <div style="font-weight:600;color:#92400e">승인 대기 중</div>
+    <div style="font-size:13px;color:#92400e;opacity:.8">담당자 검토를 기다리고 있습니다</div>
+  </div>
+</div>
+{% elif a.status == 'approved' %}
+<div style="background:#d1fae5;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+  <span style="font-size:24px">✅</span>
+  <div>
+    <div style="font-weight:600;color:#065f46">승인 완료 - 작업 진행 가능</div>
+    <div style="font-size:13px;color:#065f46;opacity:.8">승인일시: {{ a.reviewed_at }}</div>
+  </div>
+</div>
+{% else %}
+<div style="background:#fee2e2;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+    <span style="font-size:24px">❌</span>
+    <div style="font-weight:600;color:#991b1b">반려됨 - 재작성 필요</div>
+  </div>
+  {% if a.reject_reason %}
+  <div style="font-size:14px;color:#991b1b;padding:10px;background:rgba(255,255,255,.6);border-radius:8px">
+    💬 반려 사유: {{ a.reject_reason }}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- 기본 정보 -->
+<div class="card">
+  <div class="card-title">📋 기본 정보</div>
+  <table class="info-table">
+    <tr><td>회사명</td><td>{{ a.company }}</td></tr>
+    <tr><td>작업장소</td><td>{{ a.work_place }}</td></tr>
+    <tr><td>공종/작업명</td><td>{{ a.work_name }}</td></tr>
+    <tr><td>작업일시</td><td>{{ a.work_date }}</td></tr>
+    <tr><td>작업책임자</td><td>{{ a.work_responsible }}</td></tr>
+    <tr><td>작업인원</td><td>{{ a.worker_count }}</td></tr>
+    <tr><td>작성자</td><td>{{ a.engineer_name }}</td></tr>
+    <tr><td>소속팀</td><td>{{ a.team_name }}</td></tr>
+    <tr><td>제출일시</td><td>{{ a.submitted_at }}</td></tr>
+  </table>
+</div>
+
+<!-- 사전 체크 결과 -->
+<div class="card">
+  <div class="card-title">🔍 사전 위험성평가 결과</div>
+  {% set pre_labels = {
+    'work_understanding': '1. 작업 이해도',
+    'work_environment': '2. 작업 환경 인지',
+    'tools_equipment': '3. 공구/장비 확인',
+    'ppe_check': '4. PPE 확인',
+    'signal_system': '5. 신호체계'
+  } %}
+  {% for key, label in pre_labels.items() %}
+  {% if pre.get(key) %}
+  <div style="margin-bottom:12px">
+    <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">{{ label }}</div>
+    {% for item in pre[key] %}
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9">
+      <span style="color:#10b981;font-size:16px">✓</span>
+      <span style="font-size:14px">{{ item }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+<!-- 현장 위험성평가 결과 -->
+{% set cat_labels = {
+  'fire': '🔥 화재/폭발',
+  'height': '🪜 고소/추락',
+  'electric': '⚡ 감전/전기',
+  'chemical': '☣️ 화학/유해물질',
+  'confined': '🚪 밀폐공간',
+  'traffic': '🚧 교통/이동',
+  'machinery': '⚙️ 기계/장비',
+  'etc': '📝 기타'
+} %}
+{% for key, label in cat_labels.items() %}
+{% if site.get(key) %}
+<div class="card">
+  <div class="card-title">{{ label }}</div>
+  {% for item in site[key].get('items', []) %}
+  <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9">
+    <span style="color:#10b981;font-size:16px">✓</span>
+    <span style="font-size:14px">{{ item }}</span>
+  </div>
+  {% endfor %}
+  {% if site[key].get('risk_level') or site[key].get('risk_severity_'+key) %}
+  <div style="display:flex;gap:12px;margin-top:10px">
+    <div style="background:#fff3cd;border-radius:8px;padding:6px 12px;font-size:13px">
+      빈도: {{ site[key].get('risk_freq_'+key, site[key].get('risk_level','')) or '-' }}
+    </div>
+  </div>
+  {% endif %}
+  {% if site[key].get('measure') %}
+  <div style="margin-top:10px;padding:10px;background:#f0fdf4;border-radius:8px;font-size:14px;color:#166534">
+    💡 개선대책: {{ site[key].measure }}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- 담당자/마스터 승인 버튼 -->
+{% if u.role in ('manager', 'master') and a.status == 'pending' %}
+<div style="display:flex;gap:10px;margin-top:8px">
+  <button class="btn btn-success" onclick="doApprove({{ a.id }})">
+    ✅ 승인
+  </button>
+  <button class="btn btn-danger" onclick="showRejectModal()">
+    ❌ 반려
+  </button>
+</div>
+{% endif %}
+
+<!-- 반려 모달 -->
+<div id="reject-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:600px">
+    <div style="font-size:16px;font-weight:600;margin-bottom:14px">반려 사유 입력</div>
+    <textarea id="reject-reason" class="form-input" rows="4" placeholder="반려 사유를 입력해주세요" style="resize:none"></textarea>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn btn-outline" onclick="hideRejectModal()">취소</button>
+      <button class="btn btn-danger" onclick="doReject({{ a.id }})">반려 확정</button>
+    </div>
+  </div>
+</div>
+
+<div style="height:20px"></div>
+
+<script>
+function doApprove(id) {
+  if (!confirm('승인하시겠습니까?')) return;
+  fetch(`/assessment/${id}/approve`, {method:'POST'})
+    .then(r => r.json())
+    .then(() => location.reload());
+}
+function showRejectModal() {
+  const m = document.getElementById('reject-modal');
+  m.style.display = 'flex';
+}
+function hideRejectModal() {
+  document.getElementById('reject-modal').style.display = 'none';
+}
+function doReject(id) {
+  const reason = document.getElementById('reject-reason').value.trim();
+  if (!reason) { alert('반려 사유를 입력해주세요'); return; }
+  fetch(`/assessment/${id}/reject`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({reason})
+  }).then(() => location.reload());
+}
+</script>
+{% endblock %}

@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}위험성평가 작성{% endblock %}
+{% block header_title %}위험성평가 작성{% endblock %}
+{% block content %}
+<form method="POST" id="assessment-form">
+
+  <!-- 기본 정보 -->
+  <div class="card">
+    <div class="card-title">📋 기본 정보</div>
+    <div class="form-group">
+      <label class="form-label">회사명</label>
+      <input class="form-input" type="text" name="company" placeholder="회사명 입력" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">작업장소</label>
+      <input class="form-input" type="text" name="work_place" placeholder="작업장소 입력" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">공종/작업명</label>
+      <input class="form-input" type="text" name="work_name" placeholder="작업 내용 입력" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">작업일시</label>
+      <input class="form-input" type="date" name="work_date" value="{{ today }}" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">작업책임자</label>
+      <input class="form-input" type="text" name="work_responsible" placeholder="성명 입력">
+    </div>
+    <div class="form-group">
+      <label class="form-label">작업 인원</label>
+      <select class="form-input" name="worker_count">
+        <option value="1인 단독">1인 단독 작업</option>
+        <option value="2인 이상">2인 이상 작업</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 출입 전 사전 위험성평가 -->
+  <div class="section-header">
+    <h3>🔍 출입 전 사전 위험성평가</h3>
+    <p>작업 전 반드시 확인하세요</p>
+  </div>
+
+  <!-- 1. 작업 이해도 -->
+  <div class="card">
+    <div class="card-title">1. 작업 이해도 및 준비 상태</div>
+    <div class="check-group">
+      <label class="check-item">
+        <input type="checkbox" name="pre_1" value="작업 내용을 정확히 이해하고 있다">
+        <label>작업 내용을 정확히 이해하고 있습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_1" value="작업 내용의 특수성·위험성을 알고 있다">
+        <label>작업 내용의 특수성·위험성을 알고 있습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_1" value="작업 전 안전교육을 받았다">
+        <label>해당 작업에 대한 안전교육을 받았습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_1" value="교육을 받지 못했다">
+        <label>교육을 받지 못했다</label>
+      </label>
+    </div>
+  </div>
+
+  <!-- 2. 작업 환경 인지 -->
+  <div class="card">
+    <div class="card-title">2. 작업 환경 인지 여부</div>
+    <div class="check-group">
+      <label class="check-item">
+        <input type="checkbox" name="pre_2" value="직업의 위치 및 이동 방법을 알고 있다">
+        <label>직업의 위치 및 이동 방법을 알고 있습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_2" value="작업 장소를 충분히 파악했다">
+        <label>작업 장소를 충분히 파악했습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_2" value="2M 이상 고소작업이 있다">
+        <label>2M 이상 고소작업이 있습니까?</label>
+      </label>
+    </div>
+  </div>
+
+  <!-- 3. 작업 공구/장비 -->
+  <div class="card">
+    <div class="card-title">3. 작업 공구/장비 확인</div>
+    <div class="check-group">
+      <label class="check-item">
+        <input type="checkbox" name="pre_3" value="필요 공구를 확인했다">
+        <label>필요 공구를 확인했습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_3" value="전기가 필요한 장비/공구가 있다">
+        <label>전기가 필요한 장비/공구가 있습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_3" value="필요인원 및 자격을 갖춘 인원이 투입된다">
+        <label>필요인원 및 자격을 갖춘 인원이 투입됩니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_3" value="작업 공구를 올바르게 사용할 수 있다">
+        <label>작업 공구를 올바르게 사용할 수 있습니까? / 2M 이상</label>
+      </label>
+    </div>
+  </div>
+
+  <!-- 4. PPE 및 전선적 확인 -->
+  <div class="card">
+    <div class="card-title">4. PPE 및 전선적 확인 여부</div>
+    <div class="check-group">
+      <label class="check-item">
+        <input type="checkbox" name="pre_4" value="전기를 사용하는 장비/공구가 있다">
+        <label>전기를 사용하는 장비/공구가 있습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_4" value="필요한 PPE를 착용했다">
+        <label>필요한 PPE(보호구)를 착용했습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_4" value="이해했으나 일부 누락이 있다">
+        <label>이해했으나 일부 누락이 있다</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_4" value="따로 보완한 보호구가 있다">
+        <label>따로 보완한 보호구가 있습니까?</label>
+      </label>
+    </div>
+  </div>
+
+  <!-- 5. 신호체계 -->
+  <div class="card">
+    <div class="card-title">5. 신호체계</div>
+    <div class="check-group">
+      <label class="check-item">
+        <input type="checkbox" name="pre_5" value="신호 필요한 작업이 있다">
+        <label>신호 필요한 작업이 있습니까?</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_5" value="신호 체계를 갖추었다">
+        <label>신호 체계를 갖추었습니까? (단거리/의사소통을 원활)</label>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" name="pre_5" value="무전기가 준비되었다">
+        <label>무전기가 준비되었습니까?</label>
+      </label>
+    </div>
+  </div>
+
+  <!-- 출입 후 현장 위험성평가 -->
+  <div class="section-header">
+    <h3>🏗️ 출입 후 현장 위험성평가</h3>
+    <p>위험 요인 체크 및 등급 선택</p>
+  </div>
+
+  {% set categories = [
+    ('fire',     '🔥', '화재/폭발', [
+      '통풍로를 확보했습니까? (인근 포트, 작업물 등)',
+      '조 및 촉관의 다 사용했습니까?',
+      '작업 단면적 등 사항들이 적절하게 설정되었습니까?',
+      '소화기를 배치했습니까?',
+    ]),
+    ('height',   '🪜', '고소/추락', [
+      '발판들을 확보했습니까? (사다리 상태 여부)',
+      '4임의 대한 작업 적절하게 진행했습니까?',
+      '추락 방지망/안전대를 설치했습니까?',
+    ]),
+    ('electric', '⚡', '감전/전기', [
+      '전기를 사용하는 경우 접지 설치는 됩니까?',
+      '합선되지 않도록 피복 상태를 확인했습니까?',
+      '젖은 손으로 전기기구 취급하지 않습니까?',
+    ]),
+    ('chemical', '☣️', '화학/유해물질', [
+      '화학물질 취급 시 MSDS를 확인했습니까?',
+      '화학물질 보호구를 착용했습니까?',
+      '밀폐 공간 작업 전 산소농도를 측정했습니까?',
+    ]),
+    ('confined', '🚪', '밀폐공간', [
+      '밀폐 공간 출입 허가를 받았습니까?',
+      '환기 장비를 설치했습니까?',
+      '감시인을 배치했습니까?',
+    ]),
+    ('traffic',  '🚧', '교통/이동', [
+      '차량 출입 구역을 통제했습니까?',
+      '안전 통로를 확보했습니까?',
+      '야간 작업 시 조명을 확보했습니까?',
+    ]),
+    ('machinery','⚙️', '기계/장비', [
+      'LOTO(잠금장치) 절차를 적용했습니까?',
+      '회전체 방호 덮개를 설치했습니까?',
+      '장비 점검 기록을 확인했습니까?',
+    ]),
+    ('etc',      '📝', '기타', [
+      '기타 위험 요인이 있습니까?',
+      '현장 위험성평가 시 체크리스트에 없는 항목은 별도 기재하시오.',
+    ])
+  ] %}
+
+  {% for key, icon, label, items in categories %}
+  <div class="card">
+    <div class="card-title">{{ icon }} {{ label }}</div>
+    <div class="check-group">
+      {% for item in items %}
+      <label class="check-item">
+        <input type="checkbox" name="site_{{ key }}" value="{{ item }}">
+        <label>{{ item }}</label>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="risk-row" style="margin-top:12px">
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">위험 빈도</div>
+        <select class="risk-select" name="risk_freq_{{ key }}">
+          <option value="">선택</option>
+          <option value="상">상 (자주)</option>
+          <option value="중">중 (가끔)</option>
+          <option value="하">하 (드물게)</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">위험 강도</div>
+        <select class="risk-select" name="risk_severity_{{ key }}">
+          <option value="">선택</option>
+          <option value="대">대 (중대재해)</option>
+          <option value="중">중 (경상)</option>
+          <option value="소">소 (아차사고)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <div style="font-size:12px;color:#64748b;margin-bottom:4px">개선대책</div>
+      <textarea class="form-input" name="measure_{{ key }}" rows="2"
+        placeholder="개선대책 또는 조치사항 입력" style="resize:none"></textarea>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- 제출 버튼 -->
+  <button type="submit" class="btn btn-primary" style="margin-top:8px">
+    📤 위험성평가 제출
+  </button>
+  <div style="height:20px"></div>
+</form>
+
+<script>
+// 오프라인 저장 지원
+document.getElementById('assessment-form').addEventListener('submit', function(e) {
+  if (!navigator.onLine) {
+    e.preventDefault();
+    const data = new FormData(this);
+    const obj = {};
+    data.forEach((v, k) => { if (obj[k]) { obj[k] = [].concat(obj[k], v); } else { obj[k] = v; } });
+    const pending = JSON.parse(localStorage.getItem('pending_assessments') || '[]');
+    pending.push({ id: Date.now(), data: obj, savedAt: new Date().toISOString() });
+    localStorage.setItem('pending_assessments', JSON.stringify(pending));
+    alert('오프라인 상태입니다. 인터넷 연결 시 자동으로 제출됩니다.');
+    history.back();
+  }
+});
+
+// 온라인 복구 시 자동 재제출
+window.addEventListener('online', function() {
+  const pending = JSON.parse(localStorage.getItem('pending_assessments') || '[]');
+  if (pending.length > 0) {
+    if (confirm(`오프라인 저장된 평가 ${pending.length}건을 제출할까요?`)) {
+      pending.forEach(item => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/assessment/new';
+        Object.entries(item.data).forEach(([k, v]) => {
+          [].concat(v).forEach(val => {
+            const input = document.createElement('input');
+            input.type = 'hidden'; input.name = k; input.value = val;
+            form.appendChild(input);
+          });
+        });
+        document.body.appendChild(form);
+        form.submit();
+      });
+      localStorage.removeItem('pending_assessments');
+    }
+  }
+});
+</script>
+{% endblock %}

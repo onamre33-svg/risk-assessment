@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}대시보드 · 위험성평가{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <h1 class="page-title">
+    {% if user.role == 'master' %}전체 현황
+    {% elif user.role == 'manager' %}{{ user.team_name }} 제출 현황
+    {% elif user.role == 'safety' %}안전 검토 현황
+    {% else %}내 제출 내역{% endif %}
+  </h1>
+  {% if user.role == 'engineer' %}
+    <a href="{{ url_for('form') }}" class="btn btn-primary">+ 새 위험성평가 작성</a>
+  {% endif %}
+</section>
+
+<section class="stats">
+  <div class="stat-card">
+    <div class="stat-label">전체</div>
+    <div class="stat-value">{{ stats.total }}</div>
+  </div>
+  <div class="stat-card stat-pending">
+    <div class="stat-label">승인 대기</div>
+    <div class="stat-value">{{ stats.pending }}</div>
+  </div>
+  <div class="stat-card stat-approved">
+    <div class="stat-label">승인</div>
+    <div class="stat-value">{{ stats.approved }}</div>
+  </div>
+  <div class="stat-card stat-rejected">
+    <div class="stat-label">반려</div>
+    <div class="stat-value">{{ stats.rejected }}</div>
+  </div>
+</section>
+
+<section class="list">
+  {% if rows %}
+    {% for r in rows %}
+    {% set d = (r.data_json|from_json) if false else None %}
+    <a href="{{ url_for('submission_detail', sid=r.id) }}" class="row-card">
+      <div class="row-head">
+        <span class="status-pill status-{{ r.status }}">
+          {% if r.status == 'pending' %}대기
+          {% elif r.status == 'approved' %}승인
+          {% else %}반려{% endif %}
+        </span>
+        <span class="row-id">#{{ r.id }}</span>
+        <span class="row-date">{{ r.created_at }}</span>
+      </div>
+      <div class="row-body">
+        <strong>{{ r.engineer_name }}</strong>
+        {% if r.team_name %}<span class="muted">· {{ r.team_name }}</span>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      <p>아직 제출된 위험성평가가 없습니다.</p>
+      {% if user.role == 'engineer' %}
+        <a href="{{ url_for('form') }}" class="btn btn-primary">첫 평가 작성하기</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

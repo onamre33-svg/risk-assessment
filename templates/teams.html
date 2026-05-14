@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}팀 관리{% endblock %}
+{% block content %}
+<h1 class="page-title">팀 관리</h1>
+
+<details class="section" open>
+  <summary><b>+ 새 팀 추가</b></summary>
+  <form method="post" class="row-form">
+    <input name="name" placeholder="팀명 (예: 배관팀)" required />
+    <button class="btn btn-primary" type="submit">추가</button>
+  </form>
+</details>
+
+<section class="section">
+  <table class="t">
+    <tr><th>팀명</th><th>구성원 수</th><th>생성일</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td><b>{{ r.name }}</b></td>
+      <td>{{ r.member_count }} 명</td>
+      <td>{{ r.created_at }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

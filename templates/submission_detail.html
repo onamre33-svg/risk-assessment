@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}제출 상세 #{{ sub.id }}{% endblock %}
+{% block content %}
+
+<div class="detail-head">
+  <div>
+    <h1 class="page-title">제출 #{{ sub.id }}</h1>
+    <p class="muted">{{ sub.engineer_name }}{% if sub.team_name %} · {{ sub.team_name }}{% endif %} · {{ sub.created_at }}</p>
+  </div>
+  <span class="status-pill big status-{{ sub.status }}">
+    {% if sub.status == 'pending' %}승인 대기
+    {% elif sub.status == 'approved' %}승인 완료
+    {% else %}반려{% endif %}
+  </span>
+</div>
+
+{% if sub.status == 'approved' %}
+  <div class="alert alert-success">
+    ✅ {{ sub.reviewer_name }} 님이 {{ sub.reviewed_at }} 에 승인하였습니다. 작업을 진행할 수 있습니다.
+  </div>
+{% elif sub.status == 'rejected' %}
+  <div class="alert alert-danger">
+    ⛔ {{ sub.reviewer_name }} 님이 {{ sub.reviewed_at }} 에 반려하였습니다.<br/>
+    <b>사유:</b> {{ sub.rejection_reason }}
+  </div>
+{% else %}
+  <div class="alert alert-info">
+    🕐 담당자 승인을 기다리고 있습니다.
+  </div>
+{% endif %}
+
+<!-- 기본정보 -->
+<section class="section view-section">
+  <h3>기본 정보</h3>
+  <dl class="kv">
+    <dt>회사명</dt><dd>{{ data.get('company','') }}</dd>
+    <dt>작업장소</dt><dd>{{ data.get('location','') }}</dd>
+    <dt>작업책임자</dt><dd>{{ data.get('manager_name','') }}</dd>
+    <dt>공종/작업명</dt><dd>{{ data.get('work_type','') }}</dd>
+    <dt>작업 일시</dt><dd>{{ data.get('work_datetime','') }}</dd>
+    <dt>작업 인원</dt><dd>{% if data.get('worker_count')=='solo' %}1인 단독{% elif data.get('worker_count')=='multi' %}2인 이상{% else %}-{% endif %}</dd>
+  </dl>
+</section>
+
+<!-- 사전 평가 -->
+<section class="section view-section">
+  <h3>출입 전 사전 위험성평가</h3>
+  {% set pre_items = [
+    ('pre1', '작업 내용 및 절차 이해'),
+    ('pre2', '작업 환경 인지'),
+    ('pre3', '공구/장비 안전 상태'),
+    ('pre4', 'PPE 착용 및 점검'),
+    ('pre5', '비상 신호/연락 체계'),
+  ] %}
+  <table class="t">
+    <tr><th>항목</th><th>확인</th></tr>
+    {% for k, q in pre_items %}
+    <tr>
+      <td>{{ q }}</td>
+      <td>
+        {% set v = data.get(k) %}
+        {% if v=='yes' %}<span class="chip chip-ok">확인</span>
+        {% elif v=='no' %}<span class="chip chip-bad">미확인</span>
+        {% elif v=='na' %}<span class="chip">해당없음</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+
+<!-- 현장 평가 -->
+<section class="section view-section">
+  <h3>현장 위험성평가 체크리스트</h3>
+  {% set hazard_groups = [
+    ('화재 / 폭발', '화재폭발'),
+    ('고소 / 추락', '고소추락'),
+    ('감전 / 전기', '감전전기'),
+    ('화학물질 / 유해가스', '화학물질유해가스'),
+    ('밀폐 공간', '밀폐공간'),
+    ('기타 위험', '기타위험'),
+  ] %}
+  {% for label, gid in hazard_groups %}
+    {% set rows = [] %}
+    {% for i in range(1, 6) %}
+      {% set apply_key = 'h_' ~ gid ~ '_' ~ i ~ '_apply' %}
+      {% if data.get(apply_key) %}
+        {% set _ = rows.append(i) %}
+      {% endif %}
+    {% endfor %}
+    {% if rows %}
+    <div class="hazard-view">
+      <div class="hazard-title">{{ label }}</div>
+      <table class="t">
+        <tr><th>번호</th><th>빈도</th><th>강도</th><th>위험도</th><th>개선 대책</th></tr>
+        {% for i in rows %}
+          {% set fkey = 'h_' ~ gid ~ '_' ~ i ~ '_freq' %}
+          {% set skey = 'h_' ~ gid ~ '_' ~ i ~ '_severity' %}
+          {% set akey = 'h_' ~ gid ~ '_' ~ i ~ '_action' %}
+          {% set freq = data.get(fkey) %}
+          {% set sev = data.get(skey) %}
+          {% set risk = (freq|int * sev|int) if (freq and sev) else '-' %}
+          <tr>
+            <td>{{ i }}</td>
+            <td>{{ freq or '-' }}</td>
+            <td>{{ sev or '-' }}</td>
+            <td><b class="{% if risk != '-' and risk >= 12 %}txt-danger{% elif risk != '-' and risk >= 6 %}txt-warn{% endif %}">{{ risk }}</b></td>
+            <td>{{ data.get(akey) or '-' }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+  {% endfor %}
+</section>
+
+{% if data.get('memo') %}
+<section class="section view-section">
+  <h3>특이사항 / 메모</h3>
+  <p class="memo">{{ data.get('memo') }}</p>
+</section>
+{% endif %}
+
+<!-- 승인 액션 -->
+{% if sub.status == 'pending' and user.role in ('manager','master') and (user.role=='master' or sub.team_id == user.team_id) %}
+<section class="section action-section">
+  <h3>승인 / 반려</h3>
+  <form method="post" action="{{ url_for('approve', sid=sub.id) }}" style="display:inline">
+    <button class="btn btn-primary" onclick="return confirm('승인하시겠습니까?')">✅ 승인</button>
+  </form>
+  <details class="reject-box">
+    <summary class="btn btn-danger">⛔ 반려</summary>
+    <form method="post" action="{{ url_for('reject', sid=sub.id) }}" class="reject-form">
+      <textarea name="reason" rows="2" placeholder="반려 사유를 입력하세요" required></textarea>
+      <button class="btn btn-danger" type="submit">반려 처리</button>
+    </form>
+  </details>
+</section>
+{% endif %}
+
+<div class="actions">
+  <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">← 목록으로</a>
+</div>
+{% endblock %}

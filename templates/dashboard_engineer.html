@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}내 위험성평가{% endblock %}
+{% block header_title %}안녕하세요, {{ u.name }}님{% endblock %}
+{% block content %}
+
+<div style="display:flex;gap:10px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px">
+  <div style="background:#eff6ff;border-radius:12px;padding:14px 18px;text-align:center;min-width:90px">
+    <div style="font-size:24px;font-weight:700;color:#1a73e8">{{ assessments|length }}</div>
+    <div style="font-size:12px;color:#64748b;margin-top:2px">전체</div>
+  </div>
+  <div style="background:#fef3c7;border-radius:12px;padding:14px 18px;text-align:center;min-width:90px">
+    <div style="font-size:24px;font-weight:700;color:#92400e">{{ assessments|selectattr('status','eq','pending')|list|length }}</div>
+    <div style="font-size:12px;color:#64748b;margin-top:2px">대기 중</div>
+  </div>
+  <div style="background:#d1fae5;border-radius:12px;padding:14px 18px;text-align:center;min-width:90px">
+    <div style="font-size:24px;font-weight:700;color:#065f46">{{ assessments|selectattr('status','eq','approved')|list|length }}</div>
+    <div style="font-size:12px;color:#64748b;margin-top:2px">승인</div>
+  </div>
+  <div style="background:#fee2e2;border-radius:12px;padding:14px 18px;text-align:center;min-width:90px">
+    <div style="font-size:24px;font-weight:700;color:#991b1b">{{ assessments|selectattr('status','eq','rejected')|list|length }}</div>
+    <div style="font-size:12px;color:#64748b;margin-top:2px">반려</div>
+  </div>
+</div>
+
+{% if assessments %}
+  {% for a in assessments %}
+  <a class="list-item" href="/assessment/{{ a.id }}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div class="list-item-title">{{ a.work_name or '작업명 미입력' }}</div>
+      {% if a.status == 'pending' %}
+        <span class="badge badge-pending">⏳ 대기</span>
+      {% elif a.status == 'approved' %}
+        <span class="badge badge-approved">✅ 승인</span>
+      {% else %}
+        <span class="badge badge-rejected">❌ 반려</span>
+      {% endif %}
+    </div>
+    <div class="list-item-meta">
+      <span>📍 {{ a.work_place }}</span>
+      <span>📅 {{ a.work_date }}</span>
+      <span>🏢 {{ a.team_name }}</span>
+    </div>
+    {% if a.status == 'rejected' and a.reject_reason %}
+    <div style="margin-top:8px;padding:8px 10px;background:#fee2e2;border-radius:8px;font-size:13px;color:#991b1b">
+      💬 반려 사유: {{ a.reject_reason }}
+    </div>
+    {% endif %}
+    {% if a.status == 'approved' %}
+    <div style="margin-top:8px;padding:8px 10px;background:#d1fae5;border-radius:8px;font-size:13px;color:#065f46">
+      ✅ 작업 진행 가능합니다
+    </div>
+    {% endif %}
+  </a>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <div class="empty-text">제출한 위험성평가가 없습니다</div>
+    <div style="margin-top:16px">
+      <a href="/assessment/new" class="btn btn-primary" style="width:auto;display:inline-flex">새로 작성하기</a>
+    </div>
+  </div>
+{% endif %}
+
+<a href="/assessment/new" class="fab">✏️</a>
+{% endblock %}

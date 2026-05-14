@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}사용자 관리{% endblock %}
+{% block content %}
+<h1 class="page-title">사용자 관리</h1>
+
+<details class="section" open>
+  <summary><b>+ 새 계정 추가</b></summary>
+  <form method="post" class="grid form-2col">
+    <label>아이디 <input name="username" required /></label>
+    <label>비밀번호 <input name="password" type="password" required /></label>
+    <label>이름 <input name="name" required /></label>
+    <label>역할
+      <select name="role" required>
+        <option value="engineer">엔지니어</option>
+        <option value="manager">팀 담당자</option>
+        <option value="safety">안전 관리자</option>
+        <option value="master">마스터</option>
+      </select>
+    </label>
+    <label>팀
+      <select name="team_id">
+        <option value="">(없음)</option>
+        {% for t in teams %}
+          <option value="{{ t.id }}">{{ t.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>연락처 <input name="phone" placeholder="010-0000-0000" /></label>
+    <label>이메일 <input name="email" type="email" /></label>
+    <div class="col-2">
+      <button class="btn btn-primary" type="submit">추가</button>
+    </div>
+  </form>
+</details>
+
+<section class="section">
+  <table class="t">
+    <tr>
+      <th>역할</th><th>이름</th><th>아이디</th><th>팀</th>
+      <th>연락처</th><th></th>
+    </tr>
+    {% for r in rows %}
+    <tr>
+      <td>
+        <span class="rolepill role-{{ r.role }}">
+          {% if r.role == 'master' %}마스터
+          {% elif r.role == 'manager' %}담당자
+          {% elif r.role == 'safety' %}안전
+          {% else %}엔지니어{% endif %}
+        </span>
+      </td>
+      <td>{{ r.name }}</td>
+      <td>{{ r.username }}</td>
+      <td>{{ r.team_name or '-' }}</td>
+      <td>{{ r.phone or '-' }}</td>
+      <td>
+        {% if r.role != 'master' %}
+        <form method="post" action="{{ url_for('delete_user', uid=r.id) }}" style="display:inline">
+          <button class="btn btn-ghost btn-sm" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

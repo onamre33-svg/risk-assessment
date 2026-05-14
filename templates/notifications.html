@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}알림{% endblock %}
+{% block content %}
+<h1 class="page-title">🔔 알림</h1>
+
+{% if rows %}
+  <section class="list">
+    {% for r in rows %}
+      <a href="{{ r.link or '#' }}" class="row-card {% if not r.is_read %}row-unread{% endif %}">
+        <div class="row-head">
+          <span class="row-date">{{ r.created_at }}</span>
+        </div>
+        <div class="row-body">{{ r.message }}</div>
+      </a>
+    {% endfor %}
+  </section>
+{% else %}
+  <div class="empty"><p>알림이 없습니다.</p></div>
+{% endif %}
+{% endblock %}

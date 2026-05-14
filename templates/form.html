@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}위험성평가 작성{% endblock %}
+{% block content %}
+<h1 class="page-title">위험성평가 작성</h1>
+<p class="muted">현장 출입 전 작성 후 담당자 승인을 받으세요. 작성 중 인터넷이 끊기면 자동으로 임시 저장됩니다.</p>
+
+<form method="post" class="ra-form" id="raForm">
+  <!-- ───── 기본 정보 ───── -->
+  <fieldset class="section">
+    <legend>① 기본 정보</legend>
+    <div class="grid">
+      <label>회사명
+        <input name="company" required />
+      </label>
+      <label>작업장소
+        <input name="location" required />
+      </label>
+      <label>작업책임자
+        <input name="manager_name" required />
+      </label>
+      <label>공종 / 작업명
+        <input name="work_type" required />
+      </label>
+      <label>작업 일시
+        <input type="datetime-local" name="work_datetime" required />
+      </label>
+      <label>작업 인원
+        <select name="worker_count" required>
+          <option value="">선택</option>
+          <option value="solo">1인 단독</option>
+          <option value="multi">2인 이상</option>
+        </select>
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- ───── 출입 전 사전 위험성평가 ───── -->
+  <fieldset class="section">
+    <legend>② 출입 전 사전 위험성평가</legend>
+    <p class="muted small">각 항목에 대해 확인 후 체크하세요.</p>
+
+    {% set pre_items = [
+      ('pre1', '작업 내용 및 절차를 충분히 이해하였는가?'),
+      ('pre2', '작업 환경(고소·밀폐·전기 등)을 사전에 인지하였는가?'),
+      ('pre3', '작업 공구 및 장비의 안전 상태를 확인하였는가?'),
+      ('pre4', '개인보호구(PPE) 착용 및 안전 점검을 완료하였는가?'),
+      ('pre5', '비상상황시 신호 / 연락 체계가 명확한가?')
+    ] %}
+    {% for key, q in pre_items %}
+      <div class="check-row">
+        <div class="check-q"><b>{{ loop.index }}.</b> {{ q }}</div>
+        <div class="check-opts">
+          <label><input type="radio" name="{{ key }}" value="yes" required /> 확인</label>
+          <label><input type="radio" name="{{ key }}" value="no" /> 미확인</label>
+          <label><input type="radio" name="{{ key }}" value="na" /> 해당없음</label>
+        </div>
+      </div>
+    {% endfor %}
+  </fieldset>
+
+  <!-- ───── 출입 후 현장 위험성평가 ───── -->
+  <fieldset class="section">
+    <legend>③ 현장 위험성평가 체크리스트</legend>
+    <p class="muted small">발생 가능한 위험에 체크하고, 위험성 등급과 개선 대책을 작성하세요.</p>
+
+    {% set hazard_groups = [
+      ('화재 / 폭발', [
+          '화기 작업(용접·그라인더) 주변 인화물 제거',
+          '소화기 비치 및 화재감시인 배치',
+          '인화성 가스 / 액체 누출 여부 확인'
+      ]),
+      ('고소 / 추락', [
+          '안전대 / 안전모 / 안전화 착용',
+          '안전난간 / 개구부 덮개 설치',
+          '작업발판 / 사다리 견고성 확인'
+      ]),
+      ('감전 / 전기', [
+          '전원 차단 및 LOTO(잠금/표시) 시행',
+          '검전기로 무전압 상태 확인',
+          '절연장갑 / 절연공구 사용'
+      ]),
+      ('화학물질 / 유해가스', [
+          '화학물질 MSDS 확인',
+          '환기 / 송기마스크 등 호흡 보호',
+          '누출시 대응 절차 숙지'
+      ]),
+      ('밀폐 공간', [
+          '산소 / 유해가스 농도 측정',
+          '강제 환기 실시',
+          '감시인 배치 및 통신수단 확보'
+      ]),
+      ('기타 위험', [
+          '협착 / 끼임 위험 인지',
+          '소음 / 분진 보호구 착용',
+          '온열 / 한랭 대비'
+      ])
+    ] %}
+
+    {% for group, items in hazard_groups %}
+      <div class="hazard-group">
+        <div class="hazard-title">{{ group }}</div>
+        {% for it in items %}
+          {% set idx = loop.index %}
+          {% set gid = group|replace(' ','')|replace('/','')|lower %}
+          {% set name = 'h_' ~ gid ~ '_' ~ idx %}
+          <div class="hazard-row">
+            <label class="hazard-q">
+              <input type="checkbox" name="{{ name }}_apply" value="1" />
+              {{ it }}
+            </label>
+            <div class="hazard-detail">
+              <select name="{{ name }}_freq">
+                <option value="">빈도</option>
+                <option value="1">1 (낮음)</option>
+                <option value="2">2</option>
+                <option value="3">3 (보통)</option>
+                <option value="4">4</option>
+                <option value="5">5 (높음)</option>
+              </select>
+              <select name="{{ name }}_severity">
+                <option value="">강도</option>
+                <option value="1">1 (경미)</option>
+                <option value="2">2</option>
+                <option value="3">3 (중대)</option>
+                <option value="4">4</option>
+                <option value="5">5 (치명)</option>
+              </select>
+              <input name="{{ name }}_action" placeholder="개선 대책" />
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </fieldset>
+
+  <!-- ───── 서명 / 확인 ───── -->
+  <fieldset class="section">
+    <legend>④ 확인 / 서명</legend>
+    <label>특이사항 / 메모
+      <textarea name="memo" rows="3" placeholder="현장에서 발견한 추가 위험요인이나 전달사항"></textarea>
+    </label>
+    <label class="check-row">
+      <input type="checkbox" name="confirm" value="1" required />
+      <span>본인은 위 내용을 충분히 확인하였으며, 위험성을 인지한 상태에서 작업을 수행함을 서약합니다.</span>
+    </label>
+  </fieldset>
+
+  <div class="actions">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">취소</a>
+    <button type="submit" class="btn btn-primary">제출하기</button>
+  </div>
+</form>
+{% endblock %}

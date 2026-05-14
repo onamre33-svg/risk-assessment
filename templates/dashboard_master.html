@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}마스터 대시보드{% endblock %}
+{% block header_title %}전체 현황{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-num">{{ stats.total }}</div>
+    <div class="stat-label">전체 평가</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="color:#f59e0b">{{ stats.pending }}</div>
+    <div class="stat-label">승인 대기</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="color:#10b981">{{ stats.approved }}</div>
+    <div class="stat-label">승인 완료</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="color:#ef4444">{{ stats.rejected }}</div>
+    <div class="stat-label">반려</div>
+  </div>
+</div>
+
+<a href="/admin/users" class="btn btn-outline" style="margin-bottom:16px">
+  👥 사용자 · 팀 관리
+</a>
+
+<div class="card-title" style="margin-bottom:10px">최근 위험성평가</div>
+{% for a in assessments %}
+<a class="list-item" href="/assessment/{{ a.id }}">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div class="list-item-title">{{ a.work_name or '작업명 미입력' }}</div>
+    {% if a.status == 'pending' %}
+      <span class="badge badge-pending">⏳ 대기</span>
+    {% elif a.status == 'approved' %}
+      <span class="badge badge-approved">✅ 승인</span>
+    {% else %}
+      <span class="badge badge-rejected">❌ 반려</span>
+    {% endif %}
+  </div>
+  <div class="list-item-meta">
+    <span>👷 {{ a.engineer_name }}</span>
+    <span>🏢 {{ a.team_name }}</span>
+    <span>📍 {{ a.work_place }}</span>
+    <span>📅 {{ a.submitted_at[:10] }}</span>
+  </div>
+</a>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📊</div>
+  <div class="empty-text">아직 제출된 평가가 없습니다</div>
+</div>
+{% endfor %}
+{% endblock %}
