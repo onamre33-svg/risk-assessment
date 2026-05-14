@@ -1,9 +1,4 @@
 // 위험성평가 클라이언트 스크립트
-// - 서비스워커 등록
-// - 오프라인 배너
-// - 폼 자동 임시저장 (localStorage)
-// - 네트워크 복구 시 자동 재제출
-
 (function () {
   // 서비스워커 등록
   if ("serviceWorker" in navigator) {
@@ -24,73 +19,113 @@
   window.addEventListener("offline", updateOnline);
   updateOnline();
 
+  // 온라인 상태일 때 assessment/new 페이지를 캐시에 미리 저장
+  function prefetchAssessmentForm() {
+    if (!navigator.onLine) return;
+    if (!("caches" in window)) return;
+    fetch("/assessment/new", { credentials: "include" })
+      .then(res => {
+        if (res.ok) {
+          caches.open("ra-v2").then(cache => {
+            cache.put("/assessment/new", res);
+          });
+        }
+      })
+      .catch(() => {});
+  }
+
+  // 로그인된 페이지에서 폼 미리 캐시
+  if (document.cookie.includes("session") || document.querySelector(".bottom-nav")) {
+    setTimeout(prefetchAssessmentForm, 2000);
+  }
+
   // 폼 자동 임시 저장 + 오프라인 큐
-  const form = document.getElementById("raForm");
+  const form = document.getElementById("assessment-form");
   if (form) {
     const DRAFT_KEY = "ra_draft";
-    const QUEUE_KEY = "ra_queue";
+    const QUEUE_KEY = "pending_assessments";
 
-    // 복원
+    // 임시저장 복원
     try {
       const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-      if (saved && confirm("저장된 임시 작성 내용이 있습니다. 불러올까요?")) {
-        for (const [k, v] of Object.entries(saved)) {
-          const el = form.elements.namedItem(k);
-          if (!el) continue;
-          if (el.type === "checkbox" || el.type === "radio") {
-            form.querySelectorAll(`[name="${k}"]`).forEach((e) => {
-              if (e.value === v || (Array.isArray(v) && v.includes(e.value))) e.checked = true;
-            });
-          } else {
-            el.value = v;
+      if (saved && Object.keys(saved).length > 0) {
+        if (confirm("저장된 임시 작성 내용이 있습니다. 불러올까요?")) {
+          for (const [k, v] of Object.entries(saved)) {
+            const els = form.querySelectorAll(`[name="${k}"]`);
+            if (!els.length) continue;
+            if (els[0].type === "radio") {
+              els.forEach(e => { if (e.value === v) e.checked = true; });
+            } else if (els[0].type === "checkbox") {
+              const vals = Array.isArray(v) ? v : [v];
+              els.forEach(e => { e.checked = vals.includes(e.value); });
+            } else {
+              els[0].value = v;
+            }
           }
         }
       }
     } catch (e) {}
 
-    // 자동 저장 (변경 시)
+    // 자동 저장
     form.addEventListener("input", () => {
-      const data = formToObject(form);
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formToObject(form)));
+    });
+    form.addEventListener("change", () => {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formToObject(form)));
     });
 
-    // 제출
+    // 제출 처리
     form.addEventListener("submit", (e) => {
       if (!navigator.onLine) {
         e.preventDefault();
+        const obj = formToObject(form);
         const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
-        queue.push(formToObject(form));
+        queue.push({ id: Date.now(), data: obj, savedAt: new Date().toISOString() });
         localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
         localStorage.removeItem(DRAFT_KEY);
-        alert("오프라인 상태이므로 임시 저장되었습니다. 인터넷 연결 시 자동 제출됩니다.");
-        window.location.href = "/dashboard";
+        alert("오프라인 상태입니다. 인터넷 연결 시 자동으로 제출됩니다.");
+        history.back();
       } else {
         localStorage.removeItem(DRAFT_KEY);
       }
     });
   }
 
+  // 온라인 복구 시 대기 중인 항목 자동 제출
   async function trySyncQueue() {
-    const queue = JSON.parse(localStorage.getItem("ra_queue") || "[]");
+    const queue = JSON.parse(localStorage.getItem("pending_assessments") || "[]");
     if (!queue.length) return;
-    try {
-      const res = await fetch("/api/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: queue }),
-      });
-      const body = await res.json();
-      if (body.ok) {
-        localStorage.removeItem("ra_queue");
-        if (body.saved_ids && body.saved_ids.length) {
-          alert(`오프라인 저장본 ${body.saved_ids.length}건이 자동 제출되었습니다.`);
+    let successCount = 0;
+    const remaining = [];
+    for (const item of queue) {
+      try {
+        const formData = new FormData();
+        for (const [k, v] of Object.entries(item.data)) {
+          if (Array.isArray(v)) v.forEach(val => formData.append(k, val));
+          else formData.append(k, v);
         }
+        const res = await fetch("/assessment/new", {
+          method: "POST",
+          body: formData,
+          credentials: "include"
+        });
+        if (res.ok || res.redirected) {
+          successCount++;
+        } else {
+          remaining.push(item);
+        }
+      } catch (e) {
+        remaining.push(item);
       }
-    } catch (e) {
-      // 다음에 다시 시도
+    }
+    localStorage.setItem("pending_assessments", JSON.stringify(remaining));
+    if (successCount > 0) {
+      alert(`📤 오프라인 저장본 ${successCount}건이 자동 제출되었습니다!`);
+      location.reload();
     }
   }
-  // 페이지 로드 시 한 번 시도
+
+  // 페이지 로드 시 자동 제출 시도
   if (navigator.onLine) trySyncQueue();
 
   function formToObject(form) {
@@ -100,7 +135,9 @@
       if (obj[k] !== undefined) {
         if (!Array.isArray(obj[k])) obj[k] = [obj[k]];
         obj[k].push(v);
-      } else obj[k] = v;
+      } else {
+        obj[k] = v;
+      }
     }
     return obj;
   }
