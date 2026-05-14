@@ -207,6 +207,11 @@
   </table>
 </div>
 
+<!-- PDF 다운로드 버튼 -->
+<a href="/assessment/{{ a.id }}/pdf" class="btn btn-outline" style="margin-bottom:10px">
+  📄 PDF 저장
+</a>
+
 <!-- 담당자/마스터 승인 버튼 -->
 {% if u.role in ('manager', 'master') and a.status == 'pending' %}
 <div style="display:flex;gap:10px;margin-top:8px">

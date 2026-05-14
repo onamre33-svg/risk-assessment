@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+@page {
+  size: A4;
+  margin: 15mm 12mm;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; font-size: 10pt; color: #000; }
+
+/* 제목 */
+.doc-title { text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 8px; }
+.doc-subtitle { text-align: center; font-size: 10pt; margin-bottom: 12px; color: #444; }
+
+/* 기본 정보 테이블 */
+.info-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.info-table td { border: 1px solid #555; padding: 5px 8px; font-size: 9.5pt; }
+.info-table .label { background: #d9d9d9; font-weight: bold; width: 90px; }
+.info-table .label2 { background: #d9d9d9; font-weight: bold; }
+
+/* 섹션 헤더 */
+.section-header { background: #404040; color: #fff; padding: 5px 10px; font-weight: bold; font-size: 10pt; margin: 10px 0 6px; }
+
+/* 출입전 테이블 */
+.pre-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+.pre-table td { border: 1px solid #888; padding: 5px 8px; font-size: 9pt; vertical-align: middle; }
+.pre-table .q-cell { background: #f0f0f0; width: 45%; font-weight: 500; }
+.pre-table .a-cell { width: 55%; }
+.pre-table .section-label { background: #d0d8e8; font-weight: bold; font-size: 9pt; text-align: center; }
+
+/* 출입후 테이블 */
+.site-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+.site-table th { background: #404040; color: #fff; padding: 5px 4px; font-size: 8.5pt; text-align: center; border: 1px solid #333; }
+.site-table td { border: 1px solid #888; padding: 4px 6px; font-size: 8.5pt; vertical-align: middle; }
+.site-table .cat-cell { background: #d0d8e8; font-weight: bold; text-align: center; font-size: 8pt; white-space: pre-line; }
+.badge-ok { background: #c6efce; color: #276221; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 8pt; }
+.badge-fix { background: #ffeb9c; color: #9c5700; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 8pt; }
+.badge-na { background: #eeeeee; color: #666; padding: 2px 6px; border-radius: 4px; font-size: 8pt; }
+
+/* 상태 배지 */
+.status-box { border: 2px solid #333; padding: 6px 14px; display: inline-block; font-weight: bold; font-size: 11pt; margin-bottom: 10px; }
+.status-approved { border-color: #276221; color: #276221; }
+.status-pending { border-color: #9c5700; color: #9c5700; }
+.status-rejected { border-color: #c00; color: #c00; }
+
+/* 서명란 */
+.sign-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.sign-table td { border: 1px solid #888; padding: 8px; text-align: center; font-size: 9pt; }
+.sign-table .sign-label { background: #f0f0f0; font-weight: bold; }
+.sign-value { min-height: 24px; display: block; margin-top: 4px; font-weight: bold; }
+
+.footer { margin-top: 14px; font-size: 8pt; color: #666; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="doc-title">비일상 작업 위험성평가 (체크리스트법)</div>
+<div class="doc-subtitle">Non-Routine Work Risk Assessment</div>
+
+<!-- 상태 -->
+{% if a.status == 'approved' %}
+<div class="status-box status-approved">✅ 승인 완료 — 작업 진행 가능 ({{ a.reviewed_at }})</div>
+{% elif a.status == 'pending' %}
+<div class="status-box status-pending">⏳ 승인 대기 중</div>
+{% else %}
+<div class="status-box status-rejected">❌ 반려 — {{ a.reject_reason }}</div>
+{% endif %}
+
+<!-- 기본 정보 -->
+<table class="info-table">
+  <tr>
+    <td class="label">회사명</td><td>{{ a.company }}</td>
+    <td class="label">작업장소</td><td>{{ a.work_place }}</td>
+  </tr>
+  <tr>
+    <td class="label">평가 작업명</td><td colspan="3">{{ a.work_name }}</td>
+  </tr>
+  <tr>
+    <td class="label">작업일시</td><td>{{ a.work_date }}</td>
+    <td class="label">작업인원</td><td>{{ a.worker_count }}</td>
+  </tr>
+  <tr>
+    <td class="label">작성자</td><td>{{ a.engineer_name }}</td>
+    <td class="label">소속팀</td><td>{{ a.team_name }}</td>
+  </tr>
+  <tr>
+    <td class="label">제출일시</td><td>{{ a.submitted_at }}</td>
+    <td class="label">작업책임자</td><td>{{ a.work_responsible }}</td>
+  </tr>
+</table>
+
+<!-- 출입 전 사전 위험성평가 -->
+<div class="section-header">◎ 출입 전 사전 위험성평가</div>
+
+{% set pre_sections = [
+  ('1. 작업 이해도 및 준비 상태', [
+    ('pre_1_1', '작업 내용과 절차를 명확히 이해하고 있습니까?'),
+    ('pre_1_2', '작업은 처음 수행하는 작업입니까?'),
+    ('pre_1_3', '사전에 해당 작업에 대한 교육을 받았습니까?'),
+  ]),
+  ('2. 작업 환경 인지 여부', [
+    ('pre_2_1', '작업 장소를 명확히 알고 있습니까?'),
+    ('pre_2_2', '작업 장소는 밀폐구역 입니까?'),
+    ('pre_2_3', '작업 장소는 고소작업 입니까? (2M 이상)'),
+  ]),
+  ('3. 작업 도구의 적합성', [
+    ('pre_3_1', '작업에 필요한 전기기기가 있습니까?'),
+    ('pre_3_2', '전기기기의 절연상태 및 접지는 점검되었습니까?'),
+    ('pre_3_3', '사용하는 수공구는 점검 되었습니까?'),
+  ]),
+  ('4. PPE 및 안전장비 착용 여부', [
+    ('pre_4_1', '기본 보호구(안전모/안전화/보안경/안전벨트/장갑) 착용'),
+    ('pre_4_2', '기타 특수 작업 보호구를 갖추고 있습니까?'),
+  ]),
+  ('5. 신호체계', [
+    ('pre_5_1', '작업 중 상호간 신호가 필요한 작업이 있습니까?'),
+    ('pre_5_2', '무전기(생활전기) 준비 여부'),
+  ]),
+] %}
+
+<table class="pre-table">
+  {% for section_title, items in pre_sections %}
+  <tr><td colspan="2" class="section-label">{{ section_title }}</td></tr>
+  {% for key, question in items %}
+  <tr>
+    <td class="q-cell">· {{ question }}</td>
+    <td class="a-cell">{{ pre.get(key, '-') }}</td>
+  </tr>
+  {% endfor %}
+  {% endfor %}
+</table>
+
+<!-- 출입 후 현장 위험성평가 -->
+<div class="section-header">◎ 출입 후 현장 위험성평가</div>
+
+<table class="site-table">
+  <thead>
+    <tr>
+      <th style="width:36px">구분</th>
+      <th>유해/위험요인 파악 항목</th>
+      <th style="width:50px">결과</th>
+      <th style="min-width:100px">개선대책</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% set site_items = [
+      ('작업장\n관리', [
+        ('site_mgmt_1','통행로는 확보되었는가? (전도, 붕괴, 낙하물 여부)'),
+        ('site_mgmt_2','조명 및 환기관리는 적절한가?'),
+        ('site_mgmt_3','작업장 내 개구부는 확인하고 조치가 되었는가?'),
+      ], 'measure_mgmt'),
+      ('안전\n시설물', [
+        ('site_fac_1','측정/난간대 등 시설물이 적절하게 설치되었는가?'),
+      ], 'measure_facility'),
+      ('작업\n허가서', [
+        ('site_pmt_1','해당 작업이 허가서 대상 작업인가?'),
+        ('site_pmt_2','대상 작업인 경우 적합한 허가서가 발행되었는가?'),
+      ], 'measure_permit'),
+      ('밀폐\n구역', [
+        ('site_conf_1','밀폐구역에 해당되는가?'),
+        ('site_conf_2','밀폐구역 측정기준을 알고 있는가?'),
+        ('site_conf_3','산소농도 측정기는 보유하고 있는가?'),
+        ('site_conf_4','감시자는 배치 하였는가?'),
+        ('site_conf_5','환기를 위한 장치는 설치되어 있는가?'),
+      ], 'measure_confined'),
+      ('고소\n작업', [
+        ('site_hgt_1','추락위험구간 내 생명줄/안전블록은 설치 되었는가?'),
+        ('site_hgt_2','족장이 없는 경우 사외 작업자 생명줄 설치 금지'),
+        ('site_hgt_3','적절한 발판이 설치되어 있는가?'),
+        ('site_hgt_4','안전벨트를 체결할 수 있는 적절한 조치가 되었는가?'),
+        ('site_hgt_5','무자격자 사내 고소작업기계 사용금지'),
+      ], 'measure_height'),
+      ('화재\n폭발', [
+        ('site_fire_1','불티 비산방지 조치는 되었는가?'),
+        ('site_fire_2','화기작업 시 이면은 확인 하였는가?'),
+      ], 'measure_fire'),
+      ('화학\n물질', [
+        ('site_chem_1','화학물질의 사용이 있는가?'),
+        ('site_chem_2','MSDS는 보유하고 게시되어 있는가?'),
+      ], 'measure_chemical'),
+      ('설비', [
+        ('site_equip_1','끼임사고에 유의, 반드시 전원을 차단하고 장비를 점검할것'),
+        ('site_equip_2','활선, 정전 작업의 경우 필히 LOTO 실시'),
+      ], 'measure_equip'),
+      ('운반', [
+        ('site_trans_1','무자격자 사내 신호수역할 금지'),
+        ('site_trans_2','권상을 하부 출입금지 및 양중작업 시 하부를 통제 할 것'),
+      ], 'measure_transport'),
+      ('중장비', [
+        ('site_heavy_1','무자격자 사내 중장비 운행 금지'),
+        ('site_heavy_2','중장비 사용 시 유도자 필히 배치'),
+      ], 'measure_heavy'),
+      ('기계', [
+        ('site_mach_1','움직이는 기계/장비에 끼임은 확인 하였는가?'),
+        ('site_mach_2','전기 충전 및 전기 작업 중 감전의 위험은 없는가?'),
+      ], 'measure_machine'),
+      ('기타', [
+        ('site_etc_1','기타 위험요인'),
+      ], 'measure_etc'),
+    ] %}
+
+    {% for cat_name, items, measure_key in site_items %}
+    {% for i, (item_key, item_text) in enumerate(items) %}
+    <tr>
+      {% if i == 0 %}
+      <td class="cat-cell" rowspan="{{ items|length }}">{{ cat_name }}</td>
+      {% endif %}
+      <td>{{ item_text }}</td>
+      <td style="text-align:center">
+        {% set val = site.get(item_key, '해당없음') %}
+        {% if val == '적정' %}<span class="badge-ok">적정</span>
+        {% elif val == '보완' %}<span class="badge-fix">보완</span>
+        {% else %}<span class="badge-na">해당없음</span>{% endif %}
+      </td>
+      {% if i == 0 %}
+      <td rowspan="{{ items|length }}" style="font-size:8pt">{{ site.get(measure_key,'') or '' }}</td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- 서명란 -->
+<table class="sign-table">
+  <tr>
+    <td class="sign-label">작업요청부서 서명</td>
+    <td class="sign-label">임시출입 작업자 서명</td>
+    <td class="sign-label">담당자 승인</td>
+  </tr>
+  <tr>
+    <td><span class="sign-value">{{ a.sign_requester or '' }}</span></td>
+    <td><span class="sign-value">{{ a.sign_worker or '' }}</span></td>
+    <td><span class="sign-value">{% if a.status == 'approved' %}승인완료{% endif %}</span></td>
+  </tr>
+</table>
+
+<div class="footer">출력일시: {{ now }} | {{ a.work_place }} | 위험성평가 시스템</div>
+
+</body>
+</html>

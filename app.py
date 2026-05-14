@@ -1,6 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, make_response
 from datetime import datetime
 import sqlite3, hashlib, os, json
+try:
+    from weasyprint import HTML
+    WEASYPRINT_OK = True
+except:
+    WEASYPRINT_OK = False
 
 app = Flask(__name__)
 app.secret_key = 'risk-assessment-secret-2024'
@@ -50,7 +55,9 @@ def init_db():
             submitted_at TEXT DEFAULT (datetime('now','localtime')),
             reviewed_at TEXT,
             reviewer_id INTEGER,
-            offline_id TEXT           -- 오프라인 임시 ID
+            offline_id TEXT,           -- 오프라인 임시 ID
+            sign_requester TEXT,
+            sign_worker TEXT
         );
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -157,6 +164,38 @@ def register():
         conn.close()
         flash('가입 중 오류가 발생했습니다. 다시 시도해주세요.', 'error')
         return redirect(url_for('login'))
+
+
+@app.route('/assessment/<int:aid>/pdf')
+def download_pdf(aid):
+    u = current_user()
+    if not u:
+        return redirect(url_for('login'))
+    conn = get_db()
+    a = conn.execute('''
+        SELECT a.*, u.name as engineer_name, t.name as team_name
+        FROM assessments a
+        JOIN users u ON a.engineer_id=u.id
+        JOIN teams t ON a.team_id=t.id
+        WHERE a.id=?
+    ''', (aid,)).fetchone()
+    conn.close()
+    if not a:
+        return "없는 평가입니다.", 404
+    pre = json.loads(a['pre_check'] or '{}')
+    site = json.loads(a['site_check'] or '{}')
+    now = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+    if not WEASYPRINT_OK:
+        return "PDF 생성 라이브러리가 설치되지 않았습니다.", 500
+
+    html_content = render_template('assessment_pdf.html', a=a, pre=pre, site=site, now=now)
+    pdf = HTML(string=html_content).write_pdf()
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    filename = f"위험성평가_{a['work_place']}_{a['work_date']}.pdf"
+    response.headers['Content-Disposition'] = f'attachment; filename*=UTF-8''{filename}'
+    return response
 
 @app.route('/logout')
 def logout():
@@ -273,7 +312,10 @@ def new_assessment():
             json.dumps(pre_check, ensure_ascii=False),
             json.dumps(site_check, ensure_ascii=False),
             'pending'
-        ))
+        ), )
+        # 서명 저장
+        conn.execute("UPDATE assessments SET sign_requester=?, sign_worker=? WHERE id=?",
+            (data.get('sign_requester',''), data.get('sign_worker', data.get('sign_worker_1','')), cur.lastrowid))
         assessment_id = cur.lastrowid
 
         # 팀 담당자 찾기 → 알림
