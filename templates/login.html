@@ -100,6 +100,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
         <input class="form-input" type="password" name="password2" placeholder="비밀번호 재입력" required>
       </div>
       <div class="form-group">
+        <label class="form-label">연락처</label>
+        <input class="form-input" type="tel" name="phone" placeholder="010-0000-0000">
+      </div>
+      <div class="form-group" id="employee-id-group" style="display:none;">
+        <label class="form-label">사번</label>
+        <input class="form-input" type="text" name="employee_id" id="employee_id" placeholder="사번 입력">
+      </div>
+      <div class="form-group">
         <label class="form-label">역할 선택</label>
         <div class="role-grid">
           <label class="role-btn selected" id="role-engineer" onclick="selectRole('engineer')">
@@ -153,6 +161,9 @@ function selectRole(val) {
     document.getElementById('role-' + r).classList.toggle('selected', r === val);
   });
   document.querySelector(`input[value="${val}"]`).checked = true;
+  // 호선담당자/HSE만 사번 표시
+  const showEmp = (val === 'manager' || val === 'hse');
+  document.getElementById('employee-id-group').style.display = showEmp ? 'block' : 'none';
 }
 if (location.search.includes('tab=register')) switchTab('register');
 </script>

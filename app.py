@@ -43,6 +43,8 @@ def init_db():
         role TEXT NOT NULL,
         team_id INTEGER,
         team_ids TEXT,
+        phone TEXT,
+        employee_id TEXT,
         created_at TEXT DEFAULT to_char(NOW(),'YYYY-MM-DD HH24:MI:SS')
     )""")
     c.execute("""CREATE TABLE IF NOT EXISTS teams (
@@ -77,6 +79,14 @@ def init_db():
         pass
     try:
         c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS team_ids TEXT")
+    except:
+        pass
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT")
+    except:
+        pass
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id TEXT")
     except:
         pass
     pw = hashlib.sha256('admin1234'.encode()).hexdigest()
@@ -163,6 +173,8 @@ def register():
     team_id_list = request.form.getlist('team_ids')
     team_ids = [int(x) for x in team_id_list if x]
     team_id = team_ids[0] if team_ids else None
+    phone = request.form.get('phone', '').strip()
+    employee_id = request.form.get('employee_id', '').strip()
 
     conn = get_db()
     c = conn.cursor()
@@ -192,8 +204,8 @@ def register():
 
     try:
         team_ids_json = json.dumps(team_ids) if team_ids else None
-        c.execute("INSERT INTO users (username,password,name,role,team_id,team_ids) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
-                  (username, hash_pw(password), name, role, team_id, team_ids_json))
+        c.execute("INSERT INTO users (username,password,name,role,team_id,team_ids,phone,employee_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+                  (username, hash_pw(password), name, role, team_id, team_ids_json, phone or None, employee_id or None))
         new_id = c.fetchone()[0]
         if role == 'manager' and team_id:
             c.execute("UPDATE teams SET manager_id=%s WHERE id=%s", (new_id, team_id))
