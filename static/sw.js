@@ -3,7 +3,7 @@ const CACHE = "ra-v2";
 const ASSETS = [
   "/",
   "/login",
-  "/offline-form",
+  "/static/offline_form.html",
   "/static/style.css",
   "/static/app.js",
   "/static/manifest.json",
@@ -36,7 +36,7 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
 
   // assessment/new, dashboard 페이지는 캐시 우선 (오프라인 지원)
-  const offlinePages = ["/offline-form", "/", "/login"];
+  const offlinePages = ["/static/offline_form.html", "/", "/login"];
   const isOfflinePage = offlinePages.some(p => url.pathname === p || url.pathname.startsWith(p));
 
   if (isOfflinePage) {
