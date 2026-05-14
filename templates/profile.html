@@ -17,31 +17,36 @@
   .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 16px; }
   .card-title { font-size: 15px; font-weight: 700; color: #1a73e8; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #e8f0fe; display: flex; align-items: center; gap: 8px; }
   .form-group { margin-bottom: 16px; }
-  label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 600; }
-  input, select {
+  label.form-label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 600; }
+  input[type=text], input[type=password] {
     width: 100%; padding: 11px 14px; border: 1.5px solid #e0e0e0;
     border-radius: 10px; font-size: 14px; transition: border-color 0.2s;
     background: white; color: #333;
   }
-  input:focus, select:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.1); }
+  input[type=text]:focus, input[type=password]:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.1); }
   input:disabled { background: #f5f5f5; color: #999; cursor: not-allowed; }
   .hint { font-size: 12px; color: #aaa; margin-top: 5px; }
   .divider { border: none; border-top: 1.5px solid #f0f0f0; margin: 20px 0; }
   .btn-primary {
     width: 100%; padding: 13px; background: #1a73e8; color: white;
     border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
-    cursor: pointer; transition: background 0.2s, transform 0.1s;
-    margin-top: 4px;
+    cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 4px;
   }
   .btn-primary:hover { background: #1558b0; }
   .btn-primary:active { transform: scale(0.98); }
-  .role-badge {
-    display: inline-block; padding: 4px 12px; border-radius: 20px;
-    font-size: 13px; font-weight: 600;
-  }
+  .role-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
   .role-master { background: #fce4ec; color: #c62828; }
   .role-manager { background: #e3f2fd; color: #1565c0; }
   .role-engineer { background: #e8f5e9; color: #2e7d32; }
+  .role-hse { background: #e8f5e9; color: #1b5e20; }
+  /* 체크박스 호선 */
+  .team-check-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .team-check-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; cursor: pointer; background: #f8fafc; transition: all 0.15s; }
+  .team-check-item.checked { border-color: #1a73e8; background: #eff6ff; }
+  .team-check-item input[type=checkbox] { width: 17px; height: 17px; accent-color: #1a73e8; flex-shrink: 0; }
+  .team-check-item span { font-size: 14px; font-weight: 500; color: #374151; }
+  .team-check-item.checked span { color: #1a73e8; }
+  .selected-hint { font-size: 12px; color: #1a73e8; margin-top: 8px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -62,31 +67,36 @@
       <div class="card-title">👤 기본 정보</div>
 
       <div class="form-group">
-        <label>아이디</label>
+        <label class="form-label">아이디</label>
         <input type="text" value="{{ u.username }}" disabled>
       </div>
 
       <div class="form-group">
-        <label>이름 <span style="color:red">*</span></label>
+        <label class="form-label">이름 <span style="color:red">*</span></label>
         <input type="text" name="name" value="{{ u.name }}" required placeholder="이름 입력">
       </div>
 
       <div class="form-group">
-        <label>팀 선택</label>
-        <select name="team_id">
-          <option value="">-- 팀 없음 --</option>
+        <label class="form-label">호선 정보 <span style="font-size:11px;color:#94a3b8;font-weight:400">(복수 선택 가능)</span></label>
+        <div class="team-check-list" id="teamList">
           {% for t in teams %}
-            <option value="{{ t.id }}" {% if u.team_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+          <label class="team-check-item {% if t.id in user_team_ids %}checked{% endif %}" onclick="toggleCheck(this)">
+            <input type="checkbox" name="team_ids" value="{{ t.id }}"
+              {% if t.id in user_team_ids %}checked{% endif %}>
+            <span>{{ t.name }}</span>
+          </label>
           {% endfor %}
-        </select>
+        </div>
+        <div class="selected-hint" id="selectedHint"></div>
       </div>
 
       <div class="form-group">
-        <label>역할</label>
+        <label class="form-label">역할</label>
         <div style="padding: 8px 0;">
           <span class="role-badge role-{{ u.role }}">
             {% if u.role == 'master' %}👑 마스터
             {% elif u.role == 'manager' %}🔧 팀담당자
+            {% elif u.role == 'hse' %}🛡️ HSE 안전
             {% else %}⚙️ 엔지니어{% endif %}
           </span>
         </div>
@@ -96,14 +106,12 @@
 
     <div class="card">
       <div class="card-title">🔒 비밀번호 변경 <span style="font-size:12px; color:#999; font-weight:400">(선택사항)</span></div>
-
       <div class="form-group">
-        <label>새 비밀번호</label>
+        <label class="form-label">새 비밀번호</label>
         <input type="password" name="new_password" placeholder="변경하지 않으면 비워두세요">
       </div>
-
       <div class="form-group">
-        <label>새 비밀번호 확인</label>
+        <label class="form-label">새 비밀번호 확인</label>
         <input type="password" name="new_password2" placeholder="새 비밀번호 재입력">
       </div>
       <p class="hint" style="margin-top:-8px">비밀번호는 6자 이상이어야 합니다.</p>
@@ -113,5 +121,34 @@
   </form>
 
 </div>
+<script>
+function toggleCheck(label) {
+  const cb = label.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  label.classList.toggle('checked', cb.checked);
+  updateHint();
+}
+function updateHint() {
+  const checked = document.querySelectorAll('.team-check-item input:checked');
+  const hint = document.getElementById('selectedHint');
+  if (checked.length > 0) {
+    const names = Array.from(checked).map(cb => cb.closest('.team-check-item').querySelector('span').textContent);
+    hint.textContent = '선택됨: ' + names.join(', ');
+  } else {
+    hint.textContent = '';
+  }
+}
+// 페이지 로드 시 초기 힌트
+updateHint();
+// label 클릭 시 input 이벤트 중복 방지
+document.querySelectorAll('.team-check-item').forEach(label => {
+  label.addEventListener('click', function(e) {
+    if (e.target.tagName === 'INPUT') {
+      this.classList.toggle('checked', e.target.checked);
+      updateHint();
+    }
+  });
+});
+</script>
 </body>
 </html>

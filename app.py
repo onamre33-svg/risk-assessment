@@ -42,6 +42,7 @@ def init_db():
         name TEXT NOT NULL,
         role TEXT NOT NULL,
         team_id INTEGER,
+        team_ids TEXT,
         created_at TEXT DEFAULT to_char(NOW(),'YYYY-MM-DD HH24:MI:SS')
     )""")
     c.execute("""CREATE TABLE IF NOT EXISTS teams (
@@ -74,6 +75,10 @@ def init_db():
         c.execute("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS sign_responsible TEXT")
     except:
         pass
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS team_ids TEXT")
+    except:
+        pass
     pw = hashlib.sha256('admin1234'.encode()).hexdigest()
     c.execute("INSERT INTO users (username,password,name,role) VALUES (%s,%s,%s,%s) ON CONFLICT (username) DO NOTHING",
               ('admin', pw, '관리자', 'master'))
@@ -92,6 +97,23 @@ def current_user():
     u = fetchone(c)
     conn.close()
     return u
+
+def get_team_ids(user):
+    """사용자의 다중 호선 ID 목록 반환"""
+    if user.get('team_ids'):
+        try:
+            return json.loads(user['team_ids'])
+        except:
+            pass
+    if user.get('team_id'):
+        return [user['team_id']]
+    return []
+
+def get_primary_team_id(team_ids):
+    """첫 번째 호선을 기본 팀으로 반환"""
+    if team_ids:
+        return team_ids[0]
+    return None
 
 def add_notification(user_id, message, assessment_id=None):
     try:
@@ -137,7 +159,10 @@ def register():
     password = request.form.get('password','')
     password2 = request.form.get('password2','')
     role = request.form.get('role','engineer')
-    team_id = request.form.get('team_id') or None
+    # 다중 호선 선택
+    team_id_list = request.form.getlist('team_ids')
+    team_ids = [int(x) for x in team_id_list if x]
+    team_id = team_ids[0] if team_ids else None
 
     conn = get_db()
     c = conn.cursor()
@@ -166,8 +191,9 @@ def register():
         return render_template('login.html', teams=teams)
 
     try:
-        c.execute("INSERT INTO users (username,password,name,role,team_id) VALUES (%s,%s,%s,%s,%s) RETURNING id",
-                  (username, hash_pw(password), name, role, team_id))
+        team_ids_json = json.dumps(team_ids) if team_ids else None
+        c.execute("INSERT INTO users (username,password,name,role,team_id,team_ids) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
+                  (username, hash_pw(password), name, role, team_id, team_ids_json))
         new_id = c.fetchone()[0]
         if role == 'manager' and team_id:
             c.execute("UPDATE teams SET manager_id=%s WHERE id=%s", (new_id, team_id))
@@ -175,7 +201,7 @@ def register():
         conn.close()
         flash(f'가입 완료! {name}님 환영합니다. 로그인해주세요 😊', 'success')
         return redirect(url_for('login'))
-    except Exception:
+    except Exception as e:
         conn.close()
         flash('가입 중 오류가 발생했습니다.', 'error')
         return redirect(url_for('login'))
@@ -213,13 +239,22 @@ def dashboard():
                                teams=teams, users=users, stats=stats)
 
     elif u['role'] == 'manager':
-        c.execute('''SELECT a.*, u.name as engineer_name, t.name as team_name
-            FROM assessments a JOIN users u ON a.engineer_id=u.id
-            JOIN teams t ON a.team_id=t.id WHERE a.team_id=%s
-            ORDER BY a.submitted_at DESC''', (u['team_id'],))
-        assessments = fetchall(c)
-        c.execute("SELECT COUNT(*) FROM assessments WHERE team_id=%s AND status='pending'", (u['team_id'],)); p = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM assessments WHERE team_id=%s AND status='approved'", (u['team_id'],)); a2 = c.fetchone()[0]
+        team_ids = get_team_ids(u)
+        if team_ids:
+            placeholders = ','.join(['%s'] * len(team_ids))
+            c.execute(f'''SELECT a.*, u.name as engineer_name, t.name as team_name
+                FROM assessments a JOIN users u ON a.engineer_id=u.id
+                JOIN teams t ON a.team_id=t.id WHERE a.team_id IN ({placeholders})
+                ORDER BY a.submitted_at DESC''', team_ids)
+            assessments = fetchall(c)
+            c.execute(f"SELECT COUNT(*) FROM assessments WHERE team_id IN ({placeholders}) AND status='pending'", team_ids)
+            p = c.fetchone()[0]
+            c.execute(f"SELECT COUNT(*) FROM assessments WHERE team_id IN ({placeholders}) AND status='approved'", team_ids)
+            a2 = c.fetchone()[0]
+        else:
+            assessments = []
+            p = 0
+            a2 = 0
         stats = {'pending': p, 'approved': a2}
         conn.close()
         return render_template('dashboard_manager.html', u=u, assessments=assessments, stats=stats)
@@ -238,9 +273,16 @@ def dashboard():
         return render_template('dashboard_hse.html', u=u, assessments=assessments, stats=stats)
 
     else:
-        c.execute('''SELECT a.*, t.name as team_name FROM assessments a
-            JOIN teams t ON a.team_id=t.id WHERE a.engineer_id=%s
-            ORDER BY a.submitted_at DESC''', (u['id'],))
+        team_ids = get_team_ids(u)
+        if team_ids:
+            placeholders = ','.join(['%s'] * len(team_ids))
+            c.execute(f'''SELECT a.*, t.name as team_name FROM assessments a
+                JOIN teams t ON a.team_id=t.id WHERE a.engineer_id=%s
+                ORDER BY a.submitted_at DESC''', (u['id'],))
+        else:
+            c.execute('''SELECT a.*, t.name as team_name FROM assessments a
+                JOIN teams t ON a.team_id=t.id WHERE a.engineer_id=%s
+                ORDER BY a.submitted_at DESC''', (u['id'],))
         assessments = fetchall(c)
         conn.close()
         return render_template('dashboard_engineer.html', u=u, assessments=assessments)
@@ -251,8 +293,15 @@ def new_assessment():
     u = current_user()
     if not u or u['role'] != 'engineer':
         return redirect(url_for('login'))
+
+    team_ids = get_team_ids(u)
+    primary_team_id = get_primary_team_id(team_ids)
+
     if request.method == 'POST':
         data = request.form
+        # 제출 시 선택한 호선
+        selected_team_id = data.get('team_id') or primary_team_id
+
         pre_check = {k: data.get(k,'') for k in [
             'pre_1_1','pre_1_2','pre_1_3','pre_2_1','pre_2_2','pre_2_3',
             'pre_3_1','pre_3_2','pre_3_3','pre_4_1','pre_4_2','pre_5_1','pre_5_2'
@@ -274,7 +323,7 @@ def new_assessment():
             (engineer_id,team_id,company,work_place,work_name,work_date,
              work_responsible,worker_count,pre_check,site_check,status,sign_requester,sign_worker)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id''',
-            (u['id'], u['team_id'],
+            (u['id'], selected_team_id,
              data.get('company',''), data.get('work_place',''),
              data.get('work_name',''), data.get('work_date',''),
              data.get('work_responsible',''), data.get('worker_count','1인 단독'),
@@ -283,7 +332,7 @@ def new_assessment():
              'pending', data.get('sign_requester',''), sign_worker))
         assessment_id = c.fetchone()[0]
 
-        c.execute("SELECT * FROM teams WHERE id=%s", (u['team_id'],))
+        c.execute("SELECT * FROM teams WHERE id=%s", (selected_team_id,))
         team = fetchone(c)
         if team and team['manager_id']:
             add_notification(team['manager_id'],
@@ -295,7 +344,6 @@ def new_assessment():
             add_notification(m['id'],
                 f"[새 평가] {u['name']}님 위험성평가 제출 ({data.get('work_place','')})", assessment_id)
 
-        # HSE 전체 알림
         c.execute("SELECT id FROM users WHERE role='hse'")
         hse_users = fetchall(c)
         for h in hse_users:
@@ -309,10 +357,17 @@ def new_assessment():
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT * FROM teams WHERE id=%s", (u['team_id'],))
-    team = fetchone(c)
+    # 소속 호선 목록 가져오기
+    my_teams = []
+    if team_ids:
+        placeholders = ','.join(['%s'] * len(team_ids))
+        c.execute(f"SELECT * FROM teams WHERE id IN ({placeholders}) ORDER BY name", team_ids)
+        my_teams = fetchall(c)
     conn.close()
-    return render_template('assessment_form.html', u=u, team=team,
+
+    return render_template('assessment_form.html', u=u,
+                           team=my_teams[0] if my_teams else None,
+                           my_teams=my_teams,
                            today=datetime.now().strftime('%Y-%m-%d'))
 
 # ── 평가 상세 ───────────────────────────────────────────
@@ -332,9 +387,10 @@ def view_assessment(aid):
         return "없는 평가입니다.", 404
     if u['role'] == 'engineer' and a['engineer_id'] != u['id']:
         return "권한 없음", 403
-    if u['role'] == 'manager' and a['team_id'] != u['team_id']:
-        return "권한 없음", 403
-    # hse, master 는 모두 열람 가능
+    if u['role'] == 'manager':
+        team_ids = get_team_ids(u)
+        if a['team_id'] not in team_ids:
+            return "권한 없음", 403
     pre = json.loads(a['pre_check'] or '{}')
     site = json.loads(a['site_check'] or '{}')
     reviewer_name = None
@@ -425,9 +481,12 @@ def admin_users():
             c.execute("INSERT INTO teams (name) VALUES (%s)", (request.form['team_name'],))
         elif action == 'add_user':
             pw = hash_pw(request.form['password'])
-            tid = request.form.get('team_id') or None
-            c.execute("INSERT INTO users (username,password,name,role,team_id) VALUES (%s,%s,%s,%s,%s) RETURNING id",
-                      (request.form['username'], pw, request.form['name'], request.form['role'], tid))
+            tid_list = request.form.getlist('team_ids')
+            tids = [int(x) for x in tid_list if x]
+            tid = tids[0] if tids else None
+            tids_json = json.dumps(tids) if tids else None
+            c.execute("INSERT INTO users (username,password,name,role,team_id,team_ids) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
+                      (request.form['username'], pw, request.form['name'], request.form['role'], tid, tids_json))
             new_id = c.fetchone()[0]
             if request.form['role'] == 'manager' and tid:
                 c.execute("UPDATE teams SET manager_id=%s WHERE id=%s", (new_id, tid))
@@ -443,14 +502,17 @@ def admin_users():
     conn.close()
     return render_template('admin_users.html', u=u, users=users, teams=teams)
 
-# ── 마스터: 사용자 팀/역할/이름 수정 ──────────────────────────
+# ── 마스터: 사용자 수정 ──────────────────────────────────
 @app.route('/admin/users/<int:uid>/edit', methods=['POST'])
 def admin_edit_user(uid):
     u = current_user()
     if not u or u['role'] != 'master':
         return jsonify({'error': '권한 없음'}), 403
     data = request.get_json() or {}
-    team_id = data.get('team_id') or None
+    team_id_list = data.get('team_ids', [])
+    tids = [int(x) for x in team_id_list if x]
+    team_id = tids[0] if tids else None
+    tids_json = json.dumps(tids) if tids else None
     role = data.get('role', '')
     name = data.get('name', '').strip()
     conn = get_db()
@@ -461,13 +523,13 @@ def admin_edit_user(uid):
         conn.close()
         return jsonify({'error': '마스터 계정은 수정할 수 없습니다.'}), 403
     if role in ('engineer', 'manager', 'hse', 'master'):
-        c.execute("UPDATE users SET team_id=%s, role=%s, name=%s WHERE id=%s",
-                  (team_id, role, name, uid))
+        c.execute("UPDATE users SET team_id=%s, team_ids=%s, role=%s, name=%s WHERE id=%s",
+                  (team_id, tids_json, role, name, uid))
         if role == 'manager' and team_id:
             c.execute("UPDATE teams SET manager_id=%s WHERE id=%s", (uid, team_id))
     else:
-        c.execute("UPDATE users SET team_id=%s, name=%s WHERE id=%s",
-                  (team_id, name, uid))
+        c.execute("UPDATE users SET team_id=%s, team_ids=%s, name=%s WHERE id=%s",
+                  (team_id, tids_json, name, uid))
     conn.commit()
     conn.close()
     return jsonify({'status': 'ok'})
@@ -484,33 +546,37 @@ def profile():
     teams = fetchall(c)
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        team_id = request.form.get('team_id') or None
+        tid_list = request.form.getlist('team_ids')
+        tids = [int(x) for x in tid_list if x]
+        team_id = tids[0] if tids else None
+        tids_json = json.dumps(tids) if tids else None
         new_pw = request.form.get('new_password', '')
         new_pw2 = request.form.get('new_password2', '')
         if not name:
             flash('이름을 입력해주세요.', 'error')
             conn.close()
-            return render_template('profile.html', u=u, teams=teams)
+            return render_template('profile.html', u=u, teams=teams, user_team_ids=get_team_ids(u))
         if new_pw:
             if len(new_pw) < 6:
                 flash('비밀번호는 6자 이상이어야 합니다.', 'error')
                 conn.close()
-                return render_template('profile.html', u=u, teams=teams)
+                return render_template('profile.html', u=u, teams=teams, user_team_ids=get_team_ids(u))
             if new_pw != new_pw2:
                 flash('비밀번호가 일치하지 않습니다.', 'error')
                 conn.close()
-                return render_template('profile.html', u=u, teams=teams)
-            c.execute("UPDATE users SET name=%s, team_id=%s, password=%s WHERE id=%s",
-                      (name, team_id, hash_pw(new_pw), u['id']))
+                return render_template('profile.html', u=u, teams=teams, user_team_ids=get_team_ids(u))
+            c.execute("UPDATE users SET name=%s, team_id=%s, team_ids=%s, password=%s WHERE id=%s",
+                      (name, team_id, tids_json, hash_pw(new_pw), u['id']))
         else:
-            c.execute("UPDATE users SET name=%s, team_id=%s WHERE id=%s",
-                      (name, team_id, u['id']))
+            c.execute("UPDATE users SET name=%s, team_id=%s, team_ids=%s WHERE id=%s",
+                      (name, team_id, tids_json, u['id']))
         conn.commit()
         conn.close()
         flash('내 정보가 수정되었습니다. ✅', 'success')
         return redirect(url_for('profile'))
+    user_team_ids = get_team_ids(u)
     conn.close()
-    return render_template('profile.html', u=u, teams=teams)
+    return render_template('profile.html', u=u, teams=teams, user_team_ids=user_team_ids)
 
 # ── PDF ─────────────────────────────────────────────────
 @app.route('/assessment/<int:aid>/pdf')

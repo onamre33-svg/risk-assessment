@@ -18,8 +18,8 @@
   .card-title { font-size: 15px; font-weight: 700; color: #1a73e8; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #e8f0fe; display: flex; align-items: center; gap: 8px; }
   .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .form-group { flex: 1; min-width: 140px; margin-bottom: 12px; }
-  label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
-  input, select { width: 100%; padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; }
+  label.field-label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
+  input[type=text], input[type=password], select { width: 100%; padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; }
   input:focus, select:focus { outline: none; border-color: #1a73e8; }
   .btn { padding: 9px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
   .btn-primary { background: #1a73e8; color: white; }
@@ -40,12 +40,24 @@
   .action-btns { display: flex; gap: 6px; }
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
   .modal-overlay.active { display: flex; }
-  .modal { background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+  .modal { background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 440px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
   .modal h3 { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #e8f0fe; }
   .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
   .modal-btns .btn { flex: 1; padding: 11px; }
   .btn-cancel { background: #f5f5f5; color: #666; }
   .btn-cancel:hover { background: #e0e0e0; }
+  /* 체크박스 호선 */
+  .team-check-list { display: flex; flex-direction: column; gap: 7px; margin-top: 6px; }
+  .team-check-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; cursor: pointer; background: #f8fafc; transition: all 0.15s; }
+  .team-check-item.checked { border-color: #1a73e8; background: #eff6ff; }
+  .team-check-item input[type=checkbox] { width: 16px; height: 16px; accent-color: #1a73e8; flex-shrink: 0; }
+  .team-check-item span { font-size: 13px; font-weight: 500; color: #374151; }
+  .team-check-item.checked span { color: #1a73e8; }
+  /* 추가 폼 체크박스 */
+  .add-team-checks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .add-team-check { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1.5px solid #e0e0e0; border-radius: 20px; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 500; transition: all 0.15s; }
+  .add-team-check:has(input:checked) { border-color: #1a73e8; background: #eff6ff; color: #1a73e8; }
+  .add-team-check input { width: 14px; height: 14px; accent-color: #1a73e8; }
 </style>
 </head>
 <body>
@@ -61,15 +73,15 @@
     {% endfor %}
   {% endwith %}
 
-  <!-- 팀 추가 -->
+  <!-- 팀(호선) 추가 -->
   <div class="card">
-    <div class="card-title">🏢 팀 추가</div>
+    <div class="card-title">🚢 호선 추가</div>
     <form method="POST">
       <input type="hidden" name="action" value="add_team">
       <div class="form-row">
         <div class="form-group" style="flex:2">
-          <label>팀 이름</label>
-          <input type="text" name="team_name" placeholder="예: 전기팀" required>
+          <label class="field-label">호선 이름</label>
+          <input type="text" name="team_name" placeholder="예: 1호선" required>
         </div>
         <div class="form-group" style="flex:none; display:flex; align-items:flex-end;">
           <button type="submit" class="btn btn-primary">+ 추가</button>
@@ -78,7 +90,7 @@
     </form>
     <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px;">
       {% for t in teams %}
-        <span style="background:#e8f0fe; color:#1a73e8; padding:5px 14px; border-radius:20px; font-size:13px; font-weight:600;">{{ t.name }}</span>
+        <span style="background:#e8f0fe; color:#1a73e8; padding:5px 14px; border-radius:20px; font-size:13px; font-weight:600;">🚢 {{ t.name }}</span>
       {% endfor %}
     </div>
   </div>
@@ -90,39 +102,41 @@
       <input type="hidden" name="action" value="add_user">
       <div class="form-row">
         <div class="form-group">
-          <label>이름</label>
+          <label class="field-label">이름</label>
           <input type="text" name="name" placeholder="이름" required>
         </div>
         <div class="form-group">
-          <label>아이디</label>
+          <label class="field-label">아이디</label>
           <input type="text" name="username" placeholder="아이디" required>
         </div>
         <div class="form-group">
-          <label>비밀번호</label>
+          <label class="field-label">비밀번호</label>
           <input type="password" name="password" placeholder="비밀번호" required>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>역할</label>
+          <label class="field-label">역할</label>
           <select name="role">
             <option value="engineer">⚙️ 엔지니어</option>
             <option value="manager">🔧 팀담당자</option>
             <option value="hse">🛡️ HSE 안전</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>팀</label>
-          <select name="team_id">
-            <option value="">-- 없음 --</option>
-            {% for t in teams %}
-              <option value="{{ t.id }}">{{ t.name }}</option>
-            {% endfor %}
-          </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">호선 정보 (복수 선택 가능)</label>
+        <div class="add-team-checks">
+          {% for t in teams %}
+          <label class="add-team-check">
+            <input type="checkbox" name="team_ids" value="{{ t.id }}">
+            {{ t.name }}
+          </label>
+          {% endfor %}
         </div>
-        <div class="form-group" style="flex:none; display:flex; align-items:flex-end;">
-          <button type="submit" class="btn btn-primary">+ 추가</button>
-        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button type="submit" class="btn btn-primary">+ 추가</button>
       </div>
     </form>
   </div>
@@ -137,7 +151,7 @@
             <th>이름</th>
             <th>아이디</th>
             <th>역할</th>
-            <th>팀</th>
+            <th>호선</th>
             <th>관리</th>
           </tr>
         </thead>
@@ -154,12 +168,19 @@
                 {% else %}⚙️ 엔지니어{% endif %}
               </span>
             </td>
-            <td>{{ user.team_name or '-' }}</td>
+            <td style="font-size:12px; color:#555;">
+              {% if user.team_ids %}
+                {% set tids = user.team_ids | tojson %}
+                {{ user.team_name or '-' }}
+              {% else %}
+                {{ user.team_name or '-' }}
+              {% endif %}
+            </td>
             <td>
               <div class="action-btns">
                 {% if user.role != 'master' %}
                 <button class="btn btn-edit"
-                  onclick="openEditModal({{ user.id }}, '{{ user.name }}', '{{ user.role }}', {{ user.team_id or 'null' }})">
+                  onclick="openEditModal({{ user.id }}, '{{ user.name }}', '{{ user.role }}', {{ user.team_ids or '[]' }})">
                   ✏️ 수정
                 </button>
                 <form method="POST" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
@@ -185,26 +206,28 @@
   <div class="modal">
     <h3>✏️ 사용자 정보 수정</h3>
     <input type="hidden" id="edit_uid">
-    <div class="form-group">
-      <label>이름</label>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="field-label">이름</label>
       <input type="text" id="edit_name" placeholder="이름">
     </div>
-    <div class="form-group" style="margin-top:12px;">
-      <label>역할</label>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="field-label">역할</label>
       <select id="edit_role">
         <option value="engineer">⚙️ 엔지니어</option>
         <option value="manager">🔧 팀담당자</option>
         <option value="hse">🛡️ HSE 안전</option>
       </select>
     </div>
-    <div class="form-group" style="margin-top:12px;">
-      <label>팀</label>
-      <select id="edit_team">
-        <option value="">-- 팀 없음 --</option>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="field-label">호선 정보 (복수 선택 가능)</label>
+      <div class="team-check-list" id="editTeamList">
         {% for t in teams %}
-          <option value="{{ t.id }}">{{ t.name }}</option>
+        <label class="team-check-item" data-team-id="{{ t.id }}" onclick="toggleModalCheck(this)">
+          <input type="checkbox" value="{{ t.id }}">
+          <span>{{ t.name }}</span>
+        </label>
         {% endfor %}
-      </select>
+      </div>
     </div>
     <div class="modal-btns">
       <button class="btn btn-cancel" onclick="closeEditModal()">취소</button>
@@ -214,27 +237,44 @@
 </div>
 
 <script>
-function openEditModal(uid, name, role, teamId) {
+function openEditModal(uid, name, role, teamIds) {
   document.getElementById('edit_uid').value = uid;
   document.getElementById('edit_name').value = name;
   document.getElementById('edit_role').value = role;
-  const teamSelect = document.getElementById('edit_team');
-  teamSelect.value = teamId ? String(teamId) : '';
+  // 체크박스 초기화
+  document.querySelectorAll('#editTeamList .team-check-item').forEach(item => {
+    const cb = item.querySelector('input');
+    const tid = parseInt(item.dataset.teamId);
+    const checked = Array.isArray(teamIds) && teamIds.includes(tid);
+    cb.checked = checked;
+    item.classList.toggle('checked', checked);
+  });
   document.getElementById('editModal').classList.add('active');
 }
+
+function toggleModalCheck(label) {
+  const cb = label.querySelector('input');
+  cb.checked = !cb.checked;
+  label.classList.toggle('checked', cb.checked);
+}
+
 function closeEditModal() {
   document.getElementById('editModal').classList.remove('active');
 }
+
 async function saveEdit() {
   const uid = document.getElementById('edit_uid').value;
   const name = document.getElementById('edit_name').value.trim();
   const role = document.getElementById('edit_role').value;
-  const teamId = document.getElementById('edit_team').value || null;
+  const teamIds = Array.from(document.querySelectorAll('#editTeamList input:checked'))
+    .map(cb => parseInt(cb.value));
+
   if (!name) { alert('이름을 입력해주세요.'); return; }
+
   const res = await fetch(`/admin/users/${uid}/edit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, role, team_id: teamId })
+    body: JSON.stringify({ name, role, team_ids: teamIds })
   });
   const data = await res.json();
   if (data.status === 'ok') {
@@ -244,6 +284,7 @@ async function saveEdit() {
     alert('오류: ' + (data.error || '알 수 없는 오류'));
   }
 }
+
 document.getElementById('editModal').addEventListener('click', function(e) {
   if (e.target === this) closeEditModal();
 });
