@@ -89,17 +89,8 @@ function updateFab() {
   }
 }
 
-// localStorage에서 오프라인 폼 꺼내서 새 탭/페이지로 열기
 function openOfflineForm() {
-  const html = localStorage.getItem('offline_form_html');
-  if (!html) {
-    alert('오프라인 폼이 준비되지 않았습니다.\n온라인 상태에서 한번 접속 후 다시 시도해주세요.');
-    return;
-  }
-  // Blob URL로 열기
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  window.location.href = url;
+  window.location.href = '/static/offline_form.html';
 }
 
 window.addEventListener('online', updateFab);

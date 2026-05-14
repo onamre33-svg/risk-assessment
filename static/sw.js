@@ -1,5 +1,5 @@
 // 위험성평가 PWA 서비스워커
-const CACHE = "ra-v2";
+const CACHE = "ra-v3";
 const ASSETS = [
   "/",
   "/login",
