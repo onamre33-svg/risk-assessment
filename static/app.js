@@ -31,10 +31,8 @@
       .catch(() => {});
   }
 
-  // 대시보드에서 자동 저장
-  if (document.querySelector(".bottom-nav")) {
-    setTimeout(saveOfflineForm, 1500);
-  }
+  // 로그인된 모든 페이지에서 오프라인 폼 저장
+  setTimeout(saveOfflineForm, 2000);
 
   // 폼 자동 임시 저장 + 오프라인 큐
   const form = document.getElementById("assessment-form");
