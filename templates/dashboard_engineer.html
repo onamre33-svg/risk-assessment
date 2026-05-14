@@ -3,6 +3,13 @@
 {% block header_title %}안녕하세요, {{ u.name }}님{% endblock %}
 {% block content %}
 
+<!-- 내 정보 수정 버튼 -->
+<div style="text-align:right;margin-bottom:12px">
+  <a href="/profile" style="display:inline-flex;align-items:center;gap:6px;background:#e8f0fe;color:#1a73e8;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;">
+    👤 내 정보 수정
+  </a>
+</div>
+
 <div style="display:flex;gap:10px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px">
   <div style="background:#eff6ff;border-radius:12px;padding:14px 18px;text-align:center;min-width:90px">
     <div style="font-size:24px;font-weight:700;color:#1a73e8">{{ assessments|length }}</div>
