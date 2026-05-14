@@ -60,7 +60,7 @@ def init_db():
         reject_reason TEXT,
         submitted_at TEXT DEFAULT to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'),
         reviewed_at TEXT, reviewer_id INTEGER,
-        offline_id TEXT, sign_requester TEXT, sign_worker TEXT
+        offline_id TEXT, sign_requester TEXT, sign_worker TEXT, sign_responsible TEXT
     )""")
     c.execute("""CREATE TABLE IF NOT EXISTS notifications (
         id SERIAL PRIMARY KEY,
@@ -312,7 +312,17 @@ def view_assessment(aid):
         return "권한 없음", 403
     pre = json.loads(a['pre_check'] or '{}')
     site = json.loads(a['site_check'] or '{}')
-    return render_template('assessment_detail.html', u=u, a=a, pre=pre, site=site)
+    # 승인자 이름 조회
+    reviewer_name = None
+    if a['reviewer_id']:
+        conn2 = get_db()
+        c2 = conn2.cursor()
+        c2.execute("SELECT name FROM users WHERE id=%s", (a['reviewer_id'],))
+        rv = fetchone(c2)
+        conn2.close()
+        if rv:
+            reviewer_name = rv['name']
+    return render_template('assessment_detail.html', u=u, a=a, pre=pre, site=site, reviewer_name=reviewer_name)
 
 # ── 승인 / 반려 ─────────────────────────────────────────
 @app.route('/assessment/<int:aid>/approve', methods=['POST'])
@@ -320,15 +330,17 @@ def approve_assessment(aid):
     u = current_user()
     if not u or u['role'] not in ('manager','master'):
         return jsonify({'error': '권한 없음'}), 403
+    data = request.get_json() or {}
+    reviewer_name = data.get('reviewer_name', u['name'])
     conn = get_db()
     c = conn.cursor()
     c.execute("SELECT * FROM assessments WHERE id=%s", (aid,))
     a = fetchone(c)
-    c.execute("UPDATE assessments SET status='approved', reviewed_at=%s, reviewer_id=%s WHERE id=%s",
-              (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), u['id'], aid))
+    c.execute("UPDATE assessments SET status='approved', reviewed_at=%s, reviewer_id=%s, sign_responsible=%s WHERE id=%s",
+              (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), u['id'], reviewer_name, aid))
     conn.commit()
     conn.close()
-    add_notification(a['engineer_id'], "✅ 위험성평가가 승인되었습니다. 작업을 진행할 수 있습니다.", aid)
+    add_notification(a['engineer_id'], f"✅ 위험성평가가 승인되었습니다. 승인자: {reviewer_name}", aid)
     return jsonify({'status': 'approved'})
 
 @app.route('/assessment/<int:aid>/reject', methods=['POST'])

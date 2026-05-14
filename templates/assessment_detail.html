@@ -34,6 +34,7 @@
   <div>
     <div style="font-weight:600;color:#065f46">승인 완료 - 작업 진행 가능</div>
     <div style="font-size:13px;color:#065f46;opacity:.8">승인일시: {{ a.reviewed_at }}</div>
+    <div style="font-size:13px;color:#065f46;opacity:.8">승인자: {{ a['sign_responsible'] or '-' }}</div>
   </div>
 </div>
 {% else %}
@@ -215,10 +216,23 @@
 <!-- 담당자/마스터 승인 버튼 -->
 {% if u.role in ('manager', 'master') and a.status == 'pending' %}
 <div style="display:flex;gap:10px;margin-top:8px">
-  <button class="btn btn-success" onclick="doApprove({{ a.id }})">✅ 승인</button>
+  <button class="btn btn-success" onclick="showApproveModal()">✅ 승인</button>
   <button class="btn btn-danger" onclick="showRejectModal()">❌ 반려</button>
 </div>
 {% endif %}
+
+<!-- 승인 모달 -->
+<div id="approve-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:600px">
+    <div style="font-size:16px;font-weight:600;margin-bottom:6px">승인 확인</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:14px">승인자 서명을 입력해주세요</div>
+    <input id="approve-name" class="form-input" type="text" placeholder="승인자 성명 입력" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" onclick="hideApproveModal()">취소</button>
+      <button class="btn btn-success" onclick="doApprove({{ a.id }})">✅ 승인 확정</button>
+    </div>
+  </div>
+</div>
 
 <!-- 반려 모달 -->
 <div id="reject-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center">
@@ -235,9 +249,20 @@
 <div style="height:20px"></div>
 
 <script>
+function showApproveModal() {
+  document.getElementById('approve-modal').style.display = 'flex';
+}
+function hideApproveModal() {
+  document.getElementById('approve-modal').style.display = 'none';
+}
 function doApprove(id) {
-  if (!confirm('승인하시겠습니까?')) return;
-  fetch(`/assessment/${id}/approve`, {method:'POST'})
+  const name = document.getElementById('approve-name').value.trim();
+  if (!name) { alert('승인자 성명을 입력해주세요'); return; }
+  fetch(`/assessment/${id}/approve`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({reviewer_name: name})
+  })
     .then(r => r.json())
     .then(() => { location.href = '/'; });
 }
