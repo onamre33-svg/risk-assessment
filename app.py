@@ -632,6 +632,11 @@ def download_pdf(aid):
     now = datetime.now().strftime('%Y-%m-%d %H:%M')
     return render_template('assessment_pdf.html', a=a, pre=pre, site=site, now=now, print_mode=True)
 
+# ── 오프라인 전용 폼 ────────────────────────────────────
+@app.route('/offline-form')
+def offline_form():
+    return render_template('offline_form.html')
+
 # ── PWA ─────────────────────────────────────────────────
 @app.route('/manifest.json')
 def manifest():

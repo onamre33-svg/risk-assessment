@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a73e8">
+<title>위험성평가 작성 (오프라인)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#f4f6f9;color:#1e293b;font-size:15px}
+.header{background:#1a73e8;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.header a{color:white;text-decoration:none;font-size:22px}
+.header h1{font-size:17px;font-weight:600;flex:1}
+.offline-badge{background:#ef4444;color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.online-badge{background:#10b981;color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.content{padding:16px 16px 100px}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card-title{font-size:15px;font-weight:600;margin-bottom:12px;color:#1e293b}
+.form-group{margin-bottom:14px}
+.form-label{font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;background:#fff;-webkit-appearance:none}
+.form-input:focus{outline:none;border-color:#1a73e8}
+select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2364748b' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.section-header{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:12px 16px;border-radius:10px;margin-bottom:12px}
+.section-header h3{font-size:15px;font-weight:600}
+.section-header p{font-size:12px;opacity:.85;margin-top:2px}
+.pre-item{padding:10px 12px;background:#f8fafc;border-radius:10px;margin-bottom:8px}
+.pre-question{font-size:14px;color:#1e293b;font-weight:500;margin-bottom:8px;line-height:1.5}
+.pre-options{display:flex;flex-direction:row;gap:12px;align-items:center;flex-wrap:wrap}
+.pre-option{display:flex;align-items:center;gap:6px;font-size:14px;color:#374151;cursor:pointer}
+.pre-option input{accent-color:#1a73e8;width:15px;height:15px}
+.pre-option:has(input:checked){color:#1a73e8;font-weight:600}
+.risk-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.risk-table th{background:#1a73e8;color:#fff;padding:8px 4px;text-align:center;font-size:11px;font-weight:600;border:1px solid #1557b0}
+.risk-table td{border:1px solid #e2e8f0;padding:0;vertical-align:middle}
+.cat-cell{background:#e8f0fe;font-size:11px;font-weight:700;color:#1e40af;text-align:center;padding:4px 2px;white-space:pre-line;min-width:32px;line-height:1.4}
+.item-cell{padding:8px 10px;font-size:13px;color:#1e293b;line-height:1.5}
+.item-cell small{display:block;font-size:11px;color:#ef4444;margin-top:2px}
+.check-cell{text-align:center;padding:6px 2px;background:#fafafa;min-width:36px}
+.check-cell label{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:10px;color:#475569}
+.check-cell input[type=radio]{accent-color:#1a73e8;width:16px;height:16px}
+.measure-cell{padding:6px;min-width:90px}
+.measure-cell textarea{width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:6px;font-size:12px;resize:none;min-height:60px}
+.btn-submit{width:100%;padding:16px;background:#1a73e8;color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px}
+.btn-submit:disabled{background:#94a3b8;cursor:not-allowed}
+.pending-banner{background:#f59e0b;color:white;padding:12px 16px;border-radius:10px;margin-bottom:14px;font-size:14px;font-weight:500}
+.submit-msg{text-align:center;font-size:13px;color:#94a3b8;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/" onclick="history.back();return false;">&#8592;</a>
+  <h1>위험성평가 작성</h1>
+  <span id="status-badge" class="offline-badge">📡 오프라인</span>
+</div>
+
+<div class="content">
+  <div id="pending-banner" style="display:none" class="pending-banner"></div>
+
+  <form id="offline-form">
+    <div class="card">
+      <div class="card-title">📋 기본 정보</div>
+      <div class="form-group">
+        <label class="form-label">회사명</label>
+        <input class="form-input" type="text" name="company" placeholder="회사명 입력" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">작업장소</label>
+        <input class="form-input" type="text" name="work_place" placeholder="작업장소 입력" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">평가 작업명</label>
+        <input class="form-input" type="text" name="work_name" placeholder="작업 내용 입력" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">작업일시</label>
+        <input class="form-input" type="date" name="work_date" id="work_date" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">작업책임자</label>
+        <input class="form-input" type="text" name="work_responsible" placeholder="성명 입력">
+      </div>
+      <div class="form-group">
+        <label class="form-label">작업 인원</label>
+        <select class="form-input" name="worker_count" id="worker_count" onchange="toggleWorkerFields()">
+          <option value="1인 단독">1인 단독 작업</option>
+          <option value="2인 이상">2인 이상 작업</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">✍️ 서명란</div>
+      <div class="form-group">
+        <label class="form-label">작업요청부서 서명</label>
+        <input class="form-input" type="text" name="sign_requester" placeholder="작업요청부서 담당자 성명">
+      </div>
+      <div class="form-group">
+        <label class="form-label">임시출입 작업자 서명</label>
+        <div id="sign_worker_inputs">
+          <input class="form-input" type="text" name="sign_worker" placeholder="임시출입 작업자 성명" style="margin-bottom:8px">
+        </div>
+      </div>
+      <div id="sign_2person" style="display:none">
+        <div style="background:#eff6ff;border-radius:10px;padding:12px 14px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600;color:#1e40af;margin-bottom:10px">👥 2인 이상 작업 시</div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">출입업체 작업책임자 서명</label>
+            <input class="form-input" type="text" name="sign_contractor_manager" placeholder="출입업체 작업책임자 성명">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h3>🔍 출입 전 사전 위험성평가</h3>
+      <p>각 항목에 해당하는 답변을 선택하세요</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">1. 작업 이해도 및 준비 상태</div>
+      <div class="pre-item"><div class="pre-question">· 작업 내용과 절차를 명확히 이해하고 있습니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_1_1" value="정확히 알고 있다"> 정확히 알고 있다</label><label class="pre-option"><input type="radio" name="pre_1_1" value="작업 내용을 정확히 모른다"> 작업 내용을 정확히 모른다</label></div></div>
+      <div class="pre-item"><div class="pre-question">· 작업은 처음 수행하는 작업입니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_1_2" value="처음 수행하는 작업이다"> 처음 수행하는 작업이다</label><label class="pre-option"><input type="radio" name="pre_1_2" value="해당 작업에 대한 경험이 있다"> 해당 작업에 대한 경험이 있다</label></div></div>
+      <div class="pre-item"><div class="pre-question">· 사전에 해당 작업에 대한 교육을 받았습니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_1_3" value="해당 작업에 대해 충분한 교육을 받았다"> 충분한 교육을 받았다</label><label class="pre-option"><input type="radio" name="pre_1_3" value="교육을 받지 못했다"> 교육을 받지 못했다</label></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">2. 작업 환경 인지 여부</div>
+      <div class="pre-item"><div class="pre-question">· 작업 장소를 명확히 알고 있습니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_2_1" value="작업장의 위치 및 이동 방법을 알고 있다"> 알고 있다</label><label class="pre-option"><input type="radio" name="pre_2_1" value="작업장의 위치를 잘 모른다"> 잘 모른다</label></div></div>
+      <div class="pre-item"><div class="pre-question">· 작업 장소는 밀폐구역 입니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_2_2" value="밀폐구역이다"> 밀폐구역이다</label><label class="pre-option"><input type="radio" name="pre_2_2" value="밀폐구역이 아니다"> 밀폐구역이 아니다</label></div></div>
+      <div class="pre-item"><div class="pre-question">· 작업 장소는 고소작업 입니까? (2M 이상)</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_2_3" value="2M 이상 고소작업이 있다"> 고소작업이다</label><label class="pre-option"><input type="radio" name="pre_2_3" value="고소작업이 아니다"> 고소작업이 아니다</label></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">3. 작업 도구의 적합성</div>
+      <div class="pre-item"><div class="pre-question">· 작업에 필요한 전기기기가 있습니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_3_1" value="전기를 사용하는 장비/공구가 있다"> 있다</label><label class="pre-option"><input type="radio" name="pre_3_1" value="전기를 사용하는 장비/공구가 없다"> 없다</label></div></div>
+      <div class="pre-item"><div class="pre-question">· 전기기기의 절연상태 및 접지는 점검되었습니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_3_2" value="절연상태 및 접지 정비 완료함"> 완료함</label><label class="pre-option"><input type="radio" name="pre_3_2" value="절연이나 접지가 뭔지 모르겠다"> 모르겠다</label></div></div>
+      <div class="pre-item"><div class="pre-question">· 사용하는 수공구는 점검 되었습니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_3_3" value="수공구는 점검되어 파손이 없다"> 점검완료</label><label class="pre-option"><input type="radio" name="pre_3_3" value="별도의 점검을 하지 않았다"> 점검 안함</label></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">4. PPE 및 안전장비 착용 여부</div>
+      <div class="pre-item"><div class="pre-question">· 안전모, 안전화, 보안경, 그네식 안전벨트, 장갑은 삼성중공업의 기본 보호구 입니다.</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_4_1" value="이해했으며 전부 보유하고 있다"> 전부 보유</label><label class="pre-option"><input type="radio" name="pre_4_1" value="이해했으나 일부 누락이 있다"> 일부 누락</label></div></div>
+      <div class="pre-item"><div class="pre-question">· 기타 특수 작업이 있는 경우 필요한 보호구를 갖추고 있습니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_4_2" value="필요한 별도의 보호구가 준비되었다"> 준비됨</label><label class="pre-option"><input type="radio" name="pre_4_2" value="따로 필요한 보호구가 없다"> 불필요</label></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">5. 신호체계</div>
+      <div class="pre-item"><div class="pre-question">· 작업 중 상호간 신호가 필요한 작업이 있습니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_5_1" value="신호가 필요한 작업이 있다"> 신호 필요</label><label class="pre-option"><input type="radio" name="pre_5_1" value="신호가 필요 없는 작업이다"> 신호 불필요</label></div></div>
+      <div class="pre-item"><div class="pre-question">· 무전기(생활전기)를 필히 준비해야 하는 것을 알고 있습니까?</div><div class="pre-options"><label class="pre-option"><input type="radio" name="pre_5_2" value="무전기가 준비되어 있다"> 준비됨</label><label class="pre-option"><input type="radio" name="pre_5_2" value="무전기가 없다"> 없다</label></div></div>
+    </div>
+
+    <div class="section-header" style="margin-top:8px">
+      <h3>🏗️ 출입 후 현장 위험성평가</h3>
+      <p>각 항목별 적정 / 보완 / 해당없음 선택</p>
+    </div>
+
+    <div class="card" style="padding:10px 6px;overflow-x:auto">
+      <table class="risk-table">
+        <thead>
+          <tr>
+            <th style="width:34px">구분</th>
+            <th>유해/위험요인 파악</th>
+            <th style="width:36px">적정</th>
+            <th style="width:36px">보완</th>
+            <th style="width:40px">해당없음</th>
+            <th style="min-width:90px">개선대책</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="cat-cell" rowspan="3">작업장관리</td><td class="item-cell">통행로는 확보되었는가?</td><td class="check-cell"><label><input type="radio" name="site_mgmt_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mgmt_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mgmt_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="3"><textarea name="measure_mgmt" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">조명 및 환기관리는 적절한가?</td><td class="check-cell"><label><input type="radio" name="site_mgmt_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mgmt_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mgmt_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="item-cell">작업장 내 개구부는 확인하고 조치가 되었는가?</td><td class="check-cell"><label><input type="radio" name="site_mgmt_3" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mgmt_3" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mgmt_3" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell">안전시설물</td><td class="item-cell">측정/난간대 등 시설물이 적절하게 설치되었는가?</td><td class="check-cell"><label><input type="radio" name="site_fac_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_fac_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_fac_1" value="해당없음" checked> ✓</label></td><td class="measure-cell"><textarea name="measure_facility" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="cat-cell" rowspan="2">작업허가서</td><td class="item-cell">해당 작업이 허가서 대상 작업인가?</td><td class="check-cell"><label><input type="radio" name="site_pmt_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_pmt_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_pmt_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="2"><textarea name="measure_permit" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">대상 작업인 경우 적합한 허가서가 발행되었는가?</td><td class="check-cell"><label><input type="radio" name="site_pmt_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_pmt_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_pmt_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell" rowspan="5">밀폐구역</td><td class="item-cell">밀폐구역에 해당되는가?</td><td class="check-cell"><label><input type="radio" name="site_conf_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="5"><textarea name="measure_confined" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">밀폐구역 측정기준을 알고 있는가?</td><td class="check-cell"><label><input type="radio" name="site_conf_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="item-cell">산소농도 측정기는 보유하고 있는가?</td><td class="check-cell"><label><input type="radio" name="site_conf_3" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_3" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_3" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="item-cell">감시자는 배치 하였는가?</td><td class="check-cell"><label><input type="radio" name="site_conf_4" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_4" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_4" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="item-cell">환기를 위한 장치는 설치되어 있는가?</td><td class="check-cell"><label><input type="radio" name="site_conf_5" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_5" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_conf_5" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell" rowspan="5">고소작업</td><td class="item-cell">추락위험구간 내 생명줄/안전블록은 설치 되었는가?</td><td class="check-cell"><label><input type="radio" name="site_hgt_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="5"><textarea name="measure_height" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">족장이 없는 경우 사외 작업자 생명줄 설치 금지</td><td class="check-cell"><label><input type="radio" name="site_hgt_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="item-cell">적절한 발판이 설치되어 있는가?</td><td class="check-cell"><label><input type="radio" name="site_hgt_3" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_3" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_3" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="item-cell">안전벨트를 체결할 수 있는 적절한 조치가 되었는가?</td><td class="check-cell"><label><input type="radio" name="site_hgt_4" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_4" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_4" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="item-cell">무자격자 사내 고소작업기계 사용금지</td><td class="check-cell"><label><input type="radio" name="site_hgt_5" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_5" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_hgt_5" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell" rowspan="2">화재폭발</td><td class="item-cell">불티 비산방지 조치는 되었는가?</td><td class="check-cell"><label><input type="radio" name="site_fire_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_fire_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_fire_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="2"><textarea name="measure_fire" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">화기작업 시 이면은 확인 하였는가?</td><td class="check-cell"><label><input type="radio" name="site_fire_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_fire_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_fire_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell" rowspan="2">화학물질</td><td class="item-cell">화학물질의 사용이 있는가?</td><td class="check-cell"><label><input type="radio" name="site_chem_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_chem_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_chem_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="2"><textarea name="measure_chemical" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">MSDS는 보유하고 게시되어 있는가?</td><td class="check-cell"><label><input type="radio" name="site_chem_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_chem_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_chem_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell" rowspan="2">설비</td><td class="item-cell">끼임사고에 유의, 반드시 전원을 차단하고 장비를 점검할것</td><td class="check-cell"><label><input type="radio" name="site_equip_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_equip_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_equip_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="2"><textarea name="measure_equip" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">활선, 정전 작업의 경우 필히 LOTO 실시</td><td class="check-cell"><label><input type="radio" name="site_equip_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_equip_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_equip_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell" rowspan="2">운반</td><td class="item-cell">무자격자 사내 신호수역할 금지</td><td class="check-cell"><label><input type="radio" name="site_trans_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_trans_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_trans_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="2"><textarea name="measure_transport" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">권상을 하부 출입금지 및 양중작업 시 하부를 통제 할 것</td><td class="check-cell"><label><input type="radio" name="site_trans_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_trans_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_trans_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell" rowspan="2">중장비</td><td class="item-cell">무자격자 사내 중장비 운행 금지</td><td class="check-cell"><label><input type="radio" name="site_heavy_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_heavy_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_heavy_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="2"><textarea name="measure_heavy" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">중장비 사용 시 유도자 필히 배치</td><td class="check-cell"><label><input type="radio" name="site_heavy_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_heavy_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_heavy_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell" rowspan="2">기계</td><td class="item-cell">움직이는 기계/장비에 끼임은 확인 하였는가?</td><td class="check-cell"><label><input type="radio" name="site_mach_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mach_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mach_1" value="해당없음" checked> ✓</label></td><td class="measure-cell" rowspan="2"><textarea name="measure_machine" placeholder="개선대책"></textarea></td></tr>
+          <tr><td class="item-cell">전기 충전 및 전기 작업 중 감전의 위험은 없는가?</td><td class="check-cell"><label><input type="radio" name="site_mach_2" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mach_2" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_mach_2" value="해당없음" checked> ✓</label></td></tr>
+          <tr><td class="cat-cell">기타</td><td class="item-cell">기타 위험요인<small>※ 체크리스트에 없는 항목은 기타에 수기작성</small></td><td class="check-cell"><label><input type="radio" name="site_etc_1" value="적정"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_etc_1" value="보완"> ✓</label></td><td class="check-cell"><label><input type="radio" name="site_etc_1" value="해당없음" checked> ✓</label></td><td class="measure-cell"><textarea name="measure_etc" placeholder="기타 위험요인"></textarea></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submit-btn">
+      📤 저장 (온라인 시 자동 제출)
+    </button>
+    <div id="submit-msg" class="submit-msg"></div>
+    <div style="height:20px"></div>
+  </form>
+</div>
+
+<script>
+// 오늘 날짜 설정
+document.getElementById('work_date').value = new Date().toISOString().split('T')[0];
+
+// 온라인/오프라인 상태 표시
+function updateStatus() {
+  const badge = document.getElementById('status-badge');
+  if (navigator.onLine) {
+    badge.className = 'online-badge';
+    badge.textContent = '🟢 온라인';
+  } else {
+    badge.className = 'offline-badge';
+    badge.textContent = '📡 오프라인';
+  }
+}
+window.addEventListener('online', () => { updateStatus(); trySyncQueue(); });
+window.addEventListener('offline', updateStatus);
+updateStatus();
+
+// 2인 이상 토글
+function toggleWorkerFields() {
+  const val = document.getElementById('worker_count').value;
+  document.getElementById('sign_2person').style.display = val === '2인 이상' ? 'block' : 'none';
+  const container = document.getElementById('sign_worker_inputs');
+  if (val === '2인 이상') {
+    container.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      const input = document.createElement('input');
+      input.className = 'form-input';
+      input.type = 'text';
+      input.name = `sign_worker_${i}`;
+      input.placeholder = `작업자 ${i} 성명`;
+      input.style.marginBottom = '8px';
+      container.appendChild(input);
+    }
+  } else {
+    container.innerHTML = '<input class="form-input" type="text" name="sign_worker" placeholder="임시출입 작업자 성명" style="margin-bottom:8px">';
+  }
+}
+
+// 대기 중인 건수 표시
+function showPendingBanner() {
+  const queue = JSON.parse(localStorage.getItem('pending_assessments') || '[]');
+  const banner = document.getElementById('pending-banner');
+  if (queue.length > 0) {
+    banner.style.display = 'block';
+    banner.textContent = `⏳ 대기 중인 오프라인 저장본 ${queue.length}건이 있습니다. 온라인 연결 시 자동 제출됩니다.`;
+  } else {
+    banner.style.display = 'none';
+  }
+}
+showPendingBanner();
+
+// 폼 제출
+document.getElementById('offline-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const data = new FormData(this);
+  const obj = {};
+  data.forEach((v, k) => {
+    if (obj[k]) { obj[k] = [].concat(obj[k], v); }
+    else { obj[k] = v; }
+  });
+
+  if (navigator.onLine) {
+    // 온라인이면 바로 제출
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/assessment/new';
+    for (const [k, v] of Object.entries(obj)) {
+      const vals = Array.isArray(v) ? v : [v];
+      vals.forEach(val => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = k;
+        input.value = val;
+        form.appendChild(input);
+      });
+    }
+    document.body.appendChild(form);
+    form.submit();
+  } else {
+    // 오프라인이면 localStorage에 저장
+    const queue = JSON.parse(localStorage.getItem('pending_assessments') || '[]');
+    queue.push({ id: Date.now(), data: obj, savedAt: new Date().toISOString() });
+    localStorage.setItem('pending_assessments', JSON.stringify(queue));
+    alert(`✅ 오프라인 저장 완료!\n인터넷 연결 시 자동으로 제출됩니다.\n(저장된 평가: ${queue.length}건)`);
+    this.reset();
+    document.getElementById('work_date').value = new Date().toISOString().split('T')[0];
+    showPendingBanner();
+  }
+});
+
+// 온라인 복구 시 자동 제출
+async function trySyncQueue() {
+  const queue = JSON.parse(localStorage.getItem('pending_assessments') || '[]');
+  if (!queue.length) return;
+  let successCount = 0;
+  const remaining = [];
+  for (const item of queue) {
+    try {
+      const formData = new FormData();
+      for (const [k, v] of Object.entries(item.data)) {
+        const vals = Array.isArray(v) ? v : [v];
+        vals.forEach(val => formData.append(k, val));
+      }
+      const res = await fetch('/assessment/new', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      if (res.ok || res.redirected) {
+        successCount++;
+      } else {
+        remaining.push(item);
+      }
+    } catch (e) {
+      remaining.push(item);
+    }
+  }
+  localStorage.setItem('pending_assessments', JSON.stringify(remaining));
+  if (successCount > 0) {
+    alert(`📤 오프라인 저장본 ${successCount}건이 자동 제출되었습니다!`);
+    showPendingBanner();
+  }
+}
+
+if (navigator.onLine) trySyncQueue();
+</script>
+</body>
+</html>

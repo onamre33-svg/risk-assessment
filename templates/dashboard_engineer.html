@@ -45,7 +45,7 @@
     <div class="list-item-meta">
       <span>📍 {{ a.work_place }}</span>
       <span>📅 {{ a.work_date }}</span>
-      <span>🏢 {{ a.team_name }}</span>
+      <span>🚢 {{ a.team_name }}</span>
     </div>
     {% if a.status == 'rejected' and a.reject_reason %}
     <div style="margin-top:8px;padding:8px 10px;background:#fee2e2;border-radius:8px;font-size:13px;color:#991b1b">
@@ -69,5 +69,26 @@
   </div>
 {% endif %}
 
-<a href="/assessment/new" class="fab">✏️</a>
+<!-- FAB: 온라인/오프라인 자동 분기 -->
+<a href="/assessment/new" class="fab" id="fab-btn" title="새 위험성평가 작성">✏️</a>
+
+<script>
+// 온라인이면 일반 폼, 오프라인이면 오프라인 전용 폼으로 이동
+function updateFab() {
+  const btn = document.getElementById('fab-btn');
+  if (!navigator.onLine) {
+    btn.href = '/offline-form';
+    btn.title = '오프라인 작성';
+    btn.textContent = '✏️';
+    btn.style.background = '#f59e0b';
+  } else {
+    btn.href = '/assessment/new';
+    btn.title = '새 위험성평가 작성';
+    btn.style.background = '#1a73e8';
+  }
+}
+window.addEventListener('online', updateFab);
+window.addEventListener('offline', updateFab);
+updateFab();
+</script>
 {% endblock %}
