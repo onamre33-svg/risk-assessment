@@ -227,21 +227,37 @@ def new_assessment():
 
     if request.method == 'POST':
         data = request.form
+        # 출입 전 라디오 버튼 값 저장
         pre_check = {
-            'work_understanding': data.getlist('pre_1'),
-            'work_environment': data.getlist('pre_2'),
-            'tools_equipment': data.getlist('pre_3'),
-            'ppe_check': data.getlist('pre_4'),
-            'signal_system': data.getlist('pre_5'),
+            'pre_1_1': data.get('pre_1_1',''),
+            'pre_1_2': data.get('pre_1_2',''),
+            'pre_1_3': data.get('pre_1_3',''),
+            'pre_2_1': data.get('pre_2_1',''),
+            'pre_2_2': data.get('pre_2_2',''),
+            'pre_2_3': data.get('pre_2_3',''),
+            'pre_3_1': data.get('pre_3_1',''),
+            'pre_3_2': data.get('pre_3_2',''),
+            'pre_3_3': data.get('pre_3_3',''),
+            'pre_4_1': data.get('pre_4_1',''),
+            'pre_4_2': data.get('pre_4_2',''),
+            'pre_5_1': data.get('pre_5_1',''),
+            'pre_5_2': data.get('pre_5_2',''),
         }
+        # 출입 후 라디오 + 개선대책 저장
+        site_keys = [
+            'mgmt_1','mgmt_2','mgmt_3','fac_1','pmt_1','pmt_2',
+            'conf_1','conf_2','conf_3','conf_4','conf_5',
+            'hgt_1','hgt_2','hgt_3','hgt_4','hgt_5',
+            'fire_1','fire_2','chem_1','chem_2',
+            'equip_1','equip_2','trans_1','trans_2',
+            'heavy_1','heavy_2','mach_1','mach_2','etc_1'
+        ]
         site_check = {}
-        categories = ['fire','height','electric','chemical','confined','traffic','machinery','etc']
-        for cat in categories:
-            items = data.getlist(f'site_{cat}')
-            risk_level = data.get(f'risk_{cat}', '')
-            measure = data.get(f'measure_{cat}', '')
-            if items or measure:
-                site_check[cat] = {'items': items, 'risk_level': risk_level, 'measure': measure}
+        for k in site_keys:
+            site_check[f'site_{k}'] = data.get(f'site_{k}', '해당없음')
+        measure_keys = ['mgmt','facility','permit','confined','height','fire','chemical','equip','transport','heavy','machine','etc']
+        for k in measure_keys:
+            site_check[f'measure_{k}'] = data.get(f'measure_{k}', '')
 
         conn = get_db()
         cur = conn.execute('''
