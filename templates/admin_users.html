@@ -1,91 +1,256 @@
-{% extends "base.html" %}
-{% block title %}사용자 관리{% endblock %}
-{% block header_title %}사용자 · 팀 관리{% endblock %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사용자 관리</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+  .header { background: #1a73e8; color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .header a { color: white; text-decoration: none; font-size: 22px; }
+  .header h1 { font-size: 18px; font-weight: 600; }
+  .container { max-width: 800px; margin: 24px auto; padding: 0 16px 40px; }
+  .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; font-weight: 500; }
+  .alert-success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #4caf50; }
+  .alert-error { background: #ffebee; color: #c62828; border-left: 4px solid #f44336; }
+  .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 700; color: #1a73e8; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #e8f0fe; display: flex; align-items: center; gap: 8px; }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .form-group { flex: 1; min-width: 140px; margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
+  input, select { width: 100%; padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; }
+  input:focus, select:focus { outline: none; border-color: #1a73e8; }
+  .btn { padding: 9px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: #1a73e8; color: white; }
+  .btn-primary:hover { background: #1558b0; }
+  .btn-danger { background: #f44336; color: white; }
+  .btn-danger:hover { background: #c62828; }
+  .btn-edit { background: #ff9800; color: white; padding: 6px 12px; font-size: 12px; }
+  .btn-edit:hover { background: #e65100; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f8f9ff; padding: 10px 12px; text-align: left; color: #555; font-weight: 700; border-bottom: 2px solid #e8f0fe; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: middle; }
+  tr:hover td { background: #fafbff; }
+  .role-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .role-master { background: #fce4ec; color: #c62828; }
+  .role-manager { background: #e3f2fd; color: #1565c0; }
+  .role-engineer { background: #e8f5e9; color: #2e7d32; }
+  .action-btns { display: flex; gap: 6px; }
 
-<!-- 팀 추가 -->
-<div class="card">
-  <div class="card-title">🏢 팀 추가</div>
-  <form method="POST" style="display:flex;gap:10px">
-    <input type="hidden" name="action" value="add_team">
-    <input class="form-input" type="text" name="team_name" placeholder="팀 이름 입력" required style="flex:1">
-    <button class="btn btn-primary btn-sm" type="submit">추가</button>
-  </form>
-  {% if teams %}
-  <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px">
-    {% for t in teams %}
-    <span style="background:#eff6ff;color:#1e40af;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:500">
-      {{ t.name }}
-    </span>
-    {% endfor %}
-  </div>
-  {% endif %}
+  /* 모달 */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+  .modal h3 { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #e8f0fe; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-btns .btn { flex: 1; padding: 11px; }
+  .btn-cancel { background: #f5f5f5; color: #666; }
+  .btn-cancel:hover { background: #e0e0e0; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">&#8592;</a>
+  <h1>👥 사용자 관리</h1>
 </div>
 
-<!-- 사용자 추가 -->
-<div class="card">
-  <div class="card-title">👤 사용자 추가</div>
-  <form method="POST">
-    <input type="hidden" name="action" value="add_user">
-    <div class="form-group">
-      <label class="form-label">이름</label>
-      <input class="form-input" type="text" name="name" placeholder="이름" required>
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- 팀 추가 -->
+  <div class="card">
+    <div class="card-title">🏢 팀 추가</div>
+    <form method="POST">
+      <input type="hidden" name="action" value="add_team">
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>팀 이름</label>
+          <input type="text" name="team_name" placeholder="예: 전기팀" required>
+        </div>
+        <div class="form-group" style="flex:none; display:flex; align-items:flex-end;">
+          <button type="submit" class="btn btn-primary">+ 추가</button>
+        </div>
+      </div>
+    </form>
+    <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px;">
+      {% for t in teams %}
+        <span style="background:#e8f0fe; color:#1a73e8; padding:5px 14px; border-radius:20px; font-size:13px; font-weight:600;">{{ t.name }}</span>
+      {% endfor %}
     </div>
-    <div class="form-group">
-      <label class="form-label">아이디</label>
-      <input class="form-input" type="text" name="username" placeholder="로그인 아이디" required>
+  </div>
+
+  <!-- 사용자 추가 -->
+  <div class="card">
+    <div class="card-title">➕ 사용자 추가</div>
+    <form method="POST">
+      <input type="hidden" name="action" value="add_user">
+      <div class="form-row">
+        <div class="form-group">
+          <label>이름</label>
+          <input type="text" name="name" placeholder="이름" required>
+        </div>
+        <div class="form-group">
+          <label>아이디</label>
+          <input type="text" name="username" placeholder="아이디" required>
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input type="password" name="password" placeholder="비밀번호" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>역할</label>
+          <select name="role">
+            <option value="engineer">엔지니어</option>
+            <option value="manager">팀담당자</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>팀</label>
+          <select name="team_id">
+            <option value="">-- 없음 --</option>
+            {% for t in teams %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="flex:none; display:flex; align-items:flex-end;">
+          <button type="submit" class="btn btn-primary">+ 추가</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- 사용자 목록 -->
+  <div class="card">
+    <div class="card-title">📋 사용자 목록</div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>이름</th>
+            <th>아이디</th>
+            <th>역할</th>
+            <th>팀</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td><strong>{{ user.name }}</strong></td>
+            <td style="color:#666;">{{ user.username }}</td>
+            <td>
+              <span class="role-badge role-{{ user.role }}">
+                {% if user.role == 'master' %}👑 마스터
+                {% elif user.role == 'manager' %}🔧 담당자
+                {% else %}⚙️ 엔지니어{% endif %}
+              </span>
+            </td>
+            <td>{{ user.team_name or '-' }}</td>
+            <td>
+              <div class="action-btns">
+                {% if user.role != 'master' %}
+                <button class="btn btn-edit"
+                  onclick="openEditModal({{ user.id }}, '{{ user.name }}', '{{ user.role }}', {{ user.team_id or 'null' }})">
+                  ✏️ 수정
+                </button>
+                <form method="POST" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                  <input type="hidden" name="action" value="delete_user">
+                  <input type="hidden" name="user_id" value="{{ user.id }}">
+                  <button type="submit" class="btn btn-danger">🗑️</button>
+                </form>
+                {% else %}
+                <span style="color:#aaa; font-size:12px;">수정 불가</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
+</div>
+
+<!-- 수정 모달 -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>✏️ 사용자 정보 수정</h3>
+    <input type="hidden" id="edit_uid">
     <div class="form-group">
-      <label class="form-label">비밀번호</label>
-      <input class="form-input" type="password" name="password" placeholder="초기 비밀번호" required>
+      <label>이름</label>
+      <input type="text" id="edit_name" placeholder="이름">
     </div>
-    <div class="form-group">
-      <label class="form-label">권한</label>
-      <select class="form-input" name="role">
-        <option value="engineer">현장 엔지니어</option>
-        <option value="manager">팀 담당자</option>
-        <option value="master">마스터(안전관리자)</option>
+    <div class="form-group" style="margin-top:12px;">
+      <label>역할</label>
+      <select id="edit_role">
+        <option value="engineer">⚙️ 엔지니어</option>
+        <option value="manager">🔧 팀담당자</option>
       </select>
     </div>
-    <div class="form-group">
-      <label class="form-label">소속 팀</label>
-      <select class="form-input" name="team_id">
-        <option value="">팀 없음</option>
+    <div class="form-group" style="margin-top:12px;">
+      <label>팀</label>
+      <select id="edit_team">
+        <option value="">-- 팀 없음 --</option>
         {% for t in teams %}
-        <option value="{{ t.id }}">{{ t.name }}</option>
+          <option value="{{ t.id }}">{{ t.name }}</option>
         {% endfor %}
       </select>
     </div>
-    <button class="btn btn-primary" type="submit">계정 생성</button>
-  </form>
-</div>
-
-<!-- 사용자 목록 -->
-<div class="card-title" style="margin-bottom:10px">전체 사용자 ({{ users|length }}명)</div>
-{% set role_label = {'master':'🔑 마스터', 'manager':'🏢 담당자', 'engineer':'👷 엔지니어'} %}
-{% for u_item in users %}
-<div class="card" style="padding:14px 16px">
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <div>
-      <div style="font-weight:600;font-size:15px">{{ u_item.name }}</div>
-      <div style="font-size:13px;color:#64748b;margin-top:3px">
-        @{{ u_item.username }}
-        {% if u_item.team_name %} · {{ u_item.team_name }}{% endif %}
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="background:#f1f5f9;color:#475569;padding:4px 10px;border-radius:20px;font-size:12px">
-        {{ role_label.get(u_item.role, u_item.role) }}
-      </span>
-      {% if u_item.role != 'master' %}
-      <form method="POST" onsubmit="return confirm('삭제하시겠습니까?')">
-        <input type="hidden" name="action" value="delete_user">
-        <input type="hidden" name="user_id" value="{{ u_item.id }}">
-        <button type="submit" style="background:none;border:none;color:#ef4444;font-size:18px;cursor:pointer">🗑</button>
-      </form>
-      {% endif %}
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeEditModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveEdit()">💾 저장</button>
     </div>
   </div>
 </div>
-{% endfor %}
-{% endblock %}
+
+<script>
+function openEditModal(uid, name, role, teamId) {
+  document.getElementById('edit_uid').value = uid;
+  document.getElementById('edit_name').value = name;
+  document.getElementById('edit_role').value = role;
+  const teamSelect = document.getElementById('edit_team');
+  teamSelect.value = teamId ? String(teamId) : '';
+  document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('active');
+}
+
+async function saveEdit() {
+  const uid = document.getElementById('edit_uid').value;
+  const name = document.getElementById('edit_name').value.trim();
+  const role = document.getElementById('edit_role').value;
+  const teamId = document.getElementById('edit_team').value || null;
+
+  if (!name) { alert('이름을 입력해주세요.'); return; }
+
+  const res = await fetch(`/admin/users/${uid}/edit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, role, team_id: teamId })
+  });
+  const data = await res.json();
+  if (data.status === 'ok') {
+    alert('수정되었습니다. ✅');
+    location.reload();
+  } else {
+    alert('오류: ' + (data.error || '알 수 없는 오류'));
+  }
+}
+
+// 모달 바깥 클릭 시 닫기
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+</script>
+</body>
+</html>

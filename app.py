@@ -239,7 +239,6 @@ def new_assessment():
     u = current_user()
     if not u or u['role'] != 'engineer':
         return redirect(url_for('login'))
-
     if request.method == 'POST':
         data = request.form
         pre_check = {k: data.get(k,'') for k in [
@@ -247,10 +246,10 @@ def new_assessment():
             'pre_3_1','pre_3_2','pre_3_3','pre_4_1','pre_4_2','pre_5_1','pre_5_2'
         ]}
         site_keys = ['mgmt_1','mgmt_2','mgmt_3','fac_1','pmt_1','pmt_2',
-            'conf_1','conf_2','conf_3','conf_4','conf_5',
-            'hgt_1','hgt_2','hgt_3','hgt_4','hgt_5',
-            'fire_1','fire_2','chem_1','chem_2','equip_1','equip_2',
-            'trans_1','trans_2','heavy_1','heavy_2','mach_1','mach_2','etc_1']
+                     'conf_1','conf_2','conf_3','conf_4','conf_5',
+                     'hgt_1','hgt_2','hgt_3','hgt_4','hgt_5',
+                     'fire_1','fire_2','chem_1','chem_2','equip_1','equip_2',
+                     'trans_1','trans_2','heavy_1','heavy_2','mach_1','mach_2','etc_1']
         site_check = {f'site_{k}': data.get(f'site_{k}','해당없음') for k in site_keys}
         for k in ['mgmt','facility','permit','confined','height','fire','chemical','equip','transport','heavy','machine','etc']:
             site_check[f'measure_{k}'] = data.get(f'measure_{k}','')
@@ -423,6 +422,76 @@ def admin_users():
     teams = fetchall(c)
     conn.close()
     return render_template('admin_users.html', u=u, users=users, teams=teams)
+
+# ── 마스터: 사용자 팀/역할/이름 수정 ──────────────────────────
+@app.route('/admin/users/<int:uid>/edit', methods=['POST'])
+def admin_edit_user(uid):
+    u = current_user()
+    if not u or u['role'] != 'master':
+        return jsonify({'error': '권한 없음'}), 403
+    data = request.get_json() or {}
+    team_id = data.get('team_id') or None
+    role = data.get('role', '')
+    name = data.get('name', '').strip()
+    conn = get_db()
+    c = conn.cursor()
+    # master 계정은 수정 불가
+    c.execute("SELECT role FROM users WHERE id=%s", (uid,))
+    target = fetchone(c)
+    if not target or target['role'] == 'master':
+        conn.close()
+        return jsonify({'error': '마스터 계정은 수정할 수 없습니다.'}), 403
+    if role in ('engineer', 'manager', 'master'):
+        c.execute("UPDATE users SET team_id=%s, role=%s, name=%s WHERE id=%s",
+                  (team_id, role, name, uid))
+        if role == 'manager' and team_id:
+            c.execute("UPDATE teams SET manager_id=%s WHERE id=%s", (uid, team_id))
+    else:
+        c.execute("UPDATE users SET team_id=%s, name=%s WHERE id=%s",
+                  (team_id, name, uid))
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'ok'})
+
+# ── 내 정보 수정 ────────────────────────────────────────
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    u = current_user()
+    if not u:
+        return redirect(url_for('login'))
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT * FROM teams ORDER BY name")
+    teams = fetchall(c)
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        team_id = request.form.get('team_id') or None
+        new_pw = request.form.get('new_password', '')
+        new_pw2 = request.form.get('new_password2', '')
+        if not name:
+            flash('이름을 입력해주세요.', 'error')
+            conn.close()
+            return render_template('profile.html', u=u, teams=teams)
+        if new_pw:
+            if len(new_pw) < 6:
+                flash('비밀번호는 6자 이상이어야 합니다.', 'error')
+                conn.close()
+                return render_template('profile.html', u=u, teams=teams)
+            if new_pw != new_pw2:
+                flash('비밀번호가 일치하지 않습니다.', 'error')
+                conn.close()
+                return render_template('profile.html', u=u, teams=teams)
+            c.execute("UPDATE users SET name=%s, team_id=%s, password=%s WHERE id=%s",
+                      (name, team_id, hash_pw(new_pw), u['id']))
+        else:
+            c.execute("UPDATE users SET name=%s, team_id=%s WHERE id=%s",
+                      (name, team_id, u['id']))
+        conn.commit()
+        conn.close()
+        flash('내 정보가 수정되었습니다. ✅', 'success')
+        return redirect(url_for('profile'))
+    conn.close()
+    return render_template('profile.html', u=u, teams=teams)
 
 # ── PDF ─────────────────────────────────────────────────
 @app.route('/assessment/<int:aid>/pdf')
