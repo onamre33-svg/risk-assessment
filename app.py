@@ -442,14 +442,7 @@ def download_pdf(aid):
     pre = json.loads(a['pre_check'] or '{}')
     site = json.loads(a['site_check'] or '{}')
     now = datetime.now().strftime('%Y-%m-%d %H:%M')
-    if not WEASYPRINT_OK:
-        return "PDF 생성 라이브러리가 설치되지 않았습니다.", 500
-    html_content = render_template('assessment_pdf.html', a=a, pre=pre, site=site, now=now)
-    pdf = HTML(string=html_content).write_pdf()
-    response = make_response(pdf)
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename=risk_assessment_{aid}.pdf'
-    return response
+    return render_template('assessment_pdf.html', a=a, pre=pre, site=site, now=now, print_mode=True)
 
 # ── PWA ─────────────────────────────────────────────────
 @app.route('/manifest.json')
