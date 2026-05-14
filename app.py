@@ -526,12 +526,9 @@ def api_delete_team(tid):
         return jsonify({'error': '마스터만 삭제 가능합니다.'}), 403
     conn = get_db()
     c = conn.cursor()
-    # 해당 호선에 소속된 평가가 있는지 확인
-    c.execute("SELECT COUNT(*) FROM assessments WHERE team_id=%s", (tid,))
-    cnt = c.fetchone()[0]
-    if cnt > 0:
-        conn.close()
-        return jsonify({'error': f'이 호선에 평가 {cnt}건이 있어 삭제할 수 없습니다.'}), 400
+    # 해당 호선 평가 먼저 삭제
+    c.execute("DELETE FROM assessments WHERE team_id=%s", (tid,))
+    # 호선 삭제
     c.execute("DELETE FROM teams WHERE id=%s", (tid,))
     conn.commit()
     conn.close()

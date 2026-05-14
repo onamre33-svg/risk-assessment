@@ -242,7 +242,7 @@
 
 <script>
 async function deleteTeam(tid, name) {
-  if (!confirm(`"${name}" 호선을 삭제하시겠습니까?\n(소속 평가가 있으면 삭제 불가)`)) return;
+  if (!confirm(`"${name}" 호선을 삭제하시겠습니까?\n⚠️ 해당 호선의 모든 평가도 함께 삭제됩니다!`)) return;
   const res = await fetch(`/api/delete_team/${tid}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
