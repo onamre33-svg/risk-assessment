@@ -9,8 +9,10 @@ DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'risk.db')
 
 # ── DB 초기화 ──────────────────────────────────────────
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 def init_db():
@@ -78,11 +80,14 @@ def current_user():
     return u
 
 def add_notification(user_id, message, assessment_id=None):
-    conn = get_db()
-    conn.execute("INSERT INTO notifications (user_id,message,assessment_id) VALUES (?,?,?)",
-                 (user_id, message, assessment_id))
-    conn.commit()
-    conn.close()
+    try:
+        conn = get_db()
+        conn.execute("INSERT INTO notifications (user_id,message,assessment_id) VALUES (?,?,?)",
+                     (user_id, message, assessment_id))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Notification error: {e}")
 
 # ── 인증 ───────────────────────────────────────────────
 @app.route('/login', methods=['GET','POST'])
