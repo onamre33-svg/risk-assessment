@@ -1,21 +1,19 @@
 // 위험성평가 PWA 서비스워커
-const CACHE = "ra-v3";
+const CACHE = "ra-v4";
 const ASSETS = [
   "/",
   "/login",
   "/static/offline_form.html",
   "/static/style.css",
   "/static/app.js",
-  "/static/manifest.json",
-  "/static/icon-192.png",
-  "/static/icon-512.png",
 ];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE).then((c) =>
-      c.addAll(ASSETS).catch(() => {})
-    )
+    caches.open(CACHE).then((c) => {
+      // 개별로 캐시 - 하나 실패해도 나머지 계속
+      return Promise.allSettled(ASSETS.map(url => c.add(url).catch(() => {})));
+    })
   );
   self.skipWaiting();
 });
