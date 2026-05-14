@@ -2,9 +2,29 @@
 {% block title %}위험성평가 작성{% endblock %}
 {% block header_title %}위험성평가 작성{% endblock %}
 {% block content %}
+<style>
+.risk-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.risk-table th{background:#1a73e8;color:#fff;padding:8px 4px;text-align:center;font-size:11px;font-weight:600;border:1px solid #1557b0}
+.risk-table td{border:1px solid #e2e8f0;padding:0;vertical-align:middle}
+.cat-cell{background:#e8f0fe;font-size:11px;font-weight:700;color:#1e40af;text-align:center;padding:4px 2px;white-space:pre-line;min-width:32px;line-height:1.4}
+.item-cell{padding:8px 10px;font-size:13px;color:#1e293b;line-height:1.5}
+.item-cell small{display:block;font-size:11px;color:#ef4444;margin-top:2px}
+.check-cell{text-align:center;padding:6px 2px;background:#fafafa;min-width:36px}
+.check-cell label{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:10px;color:#475569}
+.check-cell input[type=radio]{accent-color:#1a73e8;width:16px;height:16px}
+.measure-cell{padding:6px;min-width:90px}
+.measure-cell textarea{width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:6px;font-size:12px;resize:none;min-height:60px}
+.measure-cell textarea:focus{outline:none;border-color:#1a73e8}
+.pre-item{padding:10px 12px;background:#f8fafc;border-radius:10px;margin-bottom:8px}
+.pre-question{font-size:14px;color:#1e293b;font-weight:500;margin-bottom:8px;line-height:1.5}
+.pre-options{display:flex;flex-direction:row;gap:12px;align-items:center}
+.pre-option{display:flex;align-items:center;gap:6px;padding:6px 10px;background:none;border:none;border-radius:0;cursor:pointer;font-size:14px;color:#374151;transition:all .15s}
+.pre-option input{accent-color:#1a73e8;width:15px;height:15px}
+.pre-option:has(input:checked){color:#1a73e8;font-weight:600;background:none;border:none}
+</style>
+
 <form method="POST" id="assessment-form">
 
-  <!-- 기본 정보 -->
   <div class="card">
     <div class="card-title">📋 기본 정보</div>
     <div class="form-group">
@@ -16,7 +36,7 @@
       <input class="form-input" type="text" name="work_place" placeholder="작업장소 입력" required>
     </div>
     <div class="form-group">
-      <label class="form-label">공종/작업명</label>
+      <label class="form-label">평가 작업명</label>
       <input class="form-input" type="text" name="work_name" placeholder="작업 내용 입력" required>
     </div>
     <div class="form-group">
@@ -29,223 +49,504 @@
     </div>
     <div class="form-group">
       <label class="form-label">작업 인원</label>
-      <select class="form-input" name="worker_count">
+      <select class="form-input" name="worker_count" id="worker_count" onchange="toggleWorkerFields()">
         <option value="1인 단독">1인 단독 작업</option>
         <option value="2인 이상">2인 이상 작업</option>
       </select>
     </div>
   </div>
 
-  <!-- 출입 전 사전 위험성평가 -->
+  <!-- 서명란 -->
+  <div class="card">
+    <div class="card-title">✍️ 서명란</div>
+    <div class="form-group">
+      <label class="form-label">작업요청부서 서명</label>
+      <input class="form-input" type="text" name="sign_requester" placeholder="작업요청부서 담당자 성명">
+    </div>
+    <div class="form-group" id="sign_worker_group">
+      <label class="form-label">임시출입 작업자 서명</label>
+      <div id="sign_worker_inputs">
+        <input class="form-input" type="text" name="sign_worker" placeholder="임시출입 작업자 성명" style="margin-bottom:8px">
+      </div>
+    </div>
+    <!-- 2인 이상일 때 -->
+    <div id="sign_2person" style="display:none">
+      <div style="background:#eff6ff;border-radius:10px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:600;color:#1e40af;margin-bottom:10px">👥 2인 이상 작업 시</div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">출입업체 작업책임자 서명</label>
+          <input class="form-input" type="text" name="sign_contractor_manager" placeholder="출입업체 작업책임자 성명">
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
   <div class="section-header">
     <h3>🔍 출입 전 사전 위험성평가</h3>
-    <p>작업 전 반드시 확인하세요</p>
+    <p>각 항목에 해당하는 답변을 선택하세요</p>
   </div>
 
-  <!-- 1. 작업 이해도 -->
   <div class="card">
     <div class="card-title">1. 작업 이해도 및 준비 상태</div>
-    <div class="check-group">
-      <label class="check-item">
-        <input type="checkbox" name="pre_1" value="작업 내용을 정확히 이해하고 있다">
-        <label>작업 내용을 정확히 이해하고 있습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_1" value="작업 내용의 특수성·위험성을 알고 있다">
-        <label>작업 내용의 특수성·위험성을 알고 있습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_1" value="작업 전 안전교육을 받았다">
-        <label>해당 작업에 대한 안전교육을 받았습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_1" value="교육을 받지 못했다">
-        <label>교육을 받지 못했다</label>
-      </label>
+    <div class="pre-item">
+      <div class="pre-question">· 작업 내용과 절차를 명확히 이해하고 있습니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_1_1" value="정확히 알고 있다"> 정확히 알고 있다</label>
+        <label class="pre-option"><input type="radio" name="pre_1_1" value="작업 내용을 정확히 모른다"> 작업 내용을 정확히 모른다</label>
+      </div>
+    </div>
+    <div class="pre-item">
+      <div class="pre-question">· 작업은 처음 수행하는 작업입니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_1_2" value="처음 수행하는 작업이다"> 처음 수행하는 작업이다</label>
+        <label class="pre-option"><input type="radio" name="pre_1_2" value="해당 작업에 대한 경험이 있다"> 해당 작업에 대한 경험이 있다</label>
+      </div>
+    </div>
+    <div class="pre-item">
+      <div class="pre-question">· 사전에 해당 작업에 대한 교육을 받았습니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_1_3" value="해당 작업에 대해 충분한 교육을 받았다"> 해당 작업에 대해 충분한 교육을 받았다</label>
+        <label class="pre-option"><input type="radio" name="pre_1_3" value="교육을 받지 못했다"> 교육을 받지 못했다</label>
+      </div>
     </div>
   </div>
 
-  <!-- 2. 작업 환경 인지 -->
   <div class="card">
     <div class="card-title">2. 작업 환경 인지 여부</div>
-    <div class="check-group">
-      <label class="check-item">
-        <input type="checkbox" name="pre_2" value="직업의 위치 및 이동 방법을 알고 있다">
-        <label>직업의 위치 및 이동 방법을 알고 있습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_2" value="작업 장소를 충분히 파악했다">
-        <label>작업 장소를 충분히 파악했습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_2" value="2M 이상 고소작업이 있다">
-        <label>2M 이상 고소작업이 있습니까?</label>
-      </label>
+    <div class="pre-item">
+      <div class="pre-question">· 작업 장소를 명확히 알고 있습니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_2_1" value="작업장의 위치 및 이동 방법을 알고 있다"> 작업장의 위치 및 이동 방법을 알고 있다</label>
+        <label class="pre-option"><input type="radio" name="pre_2_1" value="작업장의 위치를 잘 모른다"> 작업장의 위치를 잘 모른다</label>
+      </div>
+    </div>
+    <div class="pre-item">
+      <div class="pre-question">· 작업 장소는 밀폐구역 입니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_2_2" value="밀폐구역이다"> 밀폐구역이다</label>
+        <label class="pre-option"><input type="radio" name="pre_2_2" value="밀폐구역이 아니다"> 밀폐구역이 아니다</label>
+      </div>
+    </div>
+    <div class="pre-item">
+      <div class="pre-question">· 작업 장소는 고소작업 입니까? (2M 이상)</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_2_3" value="2M 이상 고소작업이 있다"> 2M 이상 고소작업이 있다</label>
+        <label class="pre-option"><input type="radio" name="pre_2_3" value="고소작업이 아니다"> 고소작업이 아니다</label>
+      </div>
     </div>
   </div>
 
-  <!-- 3. 작업 공구/장비 -->
   <div class="card">
-    <div class="card-title">3. 작업 공구/장비 확인</div>
-    <div class="check-group">
-      <label class="check-item">
-        <input type="checkbox" name="pre_3" value="필요 공구를 확인했다">
-        <label>필요 공구를 확인했습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_3" value="전기가 필요한 장비/공구가 있다">
-        <label>전기가 필요한 장비/공구가 있습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_3" value="필요인원 및 자격을 갖춘 인원이 투입된다">
-        <label>필요인원 및 자격을 갖춘 인원이 투입됩니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_3" value="작업 공구를 올바르게 사용할 수 있다">
-        <label>작업 공구를 올바르게 사용할 수 있습니까? / 2M 이상</label>
-      </label>
+    <div class="card-title">3. 작업 도구의 적합성</div>
+    <div class="pre-item">
+      <div class="pre-question">· 작업에 필요한 전기기기가 있습니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_3_1" value="전기를 사용하는 장비/공구가 있다"> 전기를 사용하는 장비/공구가 있다</label>
+        <label class="pre-option"><input type="radio" name="pre_3_1" value="전기를 사용하는 장비/공구가 없다"> 전기를 사용하는 장비/공구가 없다</label>
+      </div>
+    </div>
+    <div class="pre-item">
+      <div class="pre-question">· 전기기기의 절연상태 및 접지는 점검되었습니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_3_2" value="절연상태 및 접지 정비 완료함"> 절연상태 및 접지 정비 완료함</label>
+        <label class="pre-option"><input type="radio" name="pre_3_2" value="절연이나 접지가 뭔지 모르겠다"> 절연이나 접지가 뭔지 모르겠다</label>
+      </div>
+    </div>
+    <div class="pre-item">
+      <div class="pre-question">· 사용하는 수공구는 점검 되었습니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_3_3" value="수공구는 점검되어 파손이 없다"> 수공구는 점검되어 파손이 없다</label>
+        <label class="pre-option"><input type="radio" name="pre_3_3" value="별도의 점검을 하지 않았다"> 별도의 점검을 하지 않았다</label>
+      </div>
     </div>
   </div>
 
-  <!-- 4. PPE 및 전선적 확인 -->
   <div class="card">
-    <div class="card-title">4. PPE 및 전선적 확인 여부</div>
-    <div class="check-group">
-      <label class="check-item">
-        <input type="checkbox" name="pre_4" value="전기를 사용하는 장비/공구가 있다">
-        <label>전기를 사용하는 장비/공구가 있습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_4" value="필요한 PPE를 착용했다">
-        <label>필요한 PPE(보호구)를 착용했습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_4" value="이해했으나 일부 누락이 있다">
-        <label>이해했으나 일부 누락이 있다</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_4" value="따로 보완한 보호구가 있다">
-        <label>따로 보완한 보호구가 있습니까?</label>
-      </label>
+    <div class="card-title">4. PPE 및 안전장비 착용 여부</div>
+    <div class="pre-item">
+      <div class="pre-question">· 안전모, 안전화, 보안경, 그네식 안전벨트, 장갑은 삼성중공업의 기본 보호구 입니다.</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_4_1" value="이해했으며 전부 보유하고 있다"> 이해했으며, 전부 보유하고 있다</label>
+        <label class="pre-option"><input type="radio" name="pre_4_1" value="이해했으나 일부 누락이 있다"> 이해했으나, 일부 누락이 있다</label>
+      </div>
+    </div>
+    <div class="pre-item">
+      <div class="pre-question">· 기타 특수 작업이 있는 경우 필요한 보호구를 갖추고 있습니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_4_2" value="필요한 별도의 보호구가 준비되었다"> 필요한 별도의 보호구가 준비되었다</label>
+        <label class="pre-option"><input type="radio" name="pre_4_2" value="따로 필요한 보호구가 없다"> 따로 필요한 보호구가 없다</label>
+      </div>
     </div>
   </div>
 
-  <!-- 5. 신호체계 -->
   <div class="card">
     <div class="card-title">5. 신호체계</div>
-    <div class="check-group">
-      <label class="check-item">
-        <input type="checkbox" name="pre_5" value="신호 필요한 작업이 있다">
-        <label>신호 필요한 작업이 있습니까?</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_5" value="신호 체계를 갖추었다">
-        <label>신호 체계를 갖추었습니까? (단거리/의사소통을 원활)</label>
-      </label>
-      <label class="check-item">
-        <input type="checkbox" name="pre_5" value="무전기가 준비되었다">
-        <label>무전기가 준비되었습니까?</label>
-      </label>
+    <div class="pre-item">
+      <div class="pre-question">· 작업 중 상호간 신호가 필요한 작업이 있습니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_5_1" value="신호가 필요한 작업이 있다"> 신호가 필요한 작업이 있다 (원거리 의사소통 포함)</label>
+        <label class="pre-option"><input type="radio" name="pre_5_1" value="신호가 필요 없는 작업이다"> 신호가 필요 없는 작업이다 (근거리에서 작업이 진행된다)</label>
+      </div>
+    </div>
+    <div class="pre-item">
+      <div class="pre-question">· 2인 이상 방문하여 4대 유형의 작업을 수행하는 경우, 무전기(생활전기)를 필히 준비해야 하는 것을 알고 있습니까?</div>
+      <div class="pre-options">
+        <label class="pre-option"><input type="radio" name="pre_5_2" value="무전기가 준비되어 있다"> 무전기가 준비되어 있다</label>
+        <label class="pre-option"><input type="radio" name="pre_5_2" value="무전기가 없다"> 무전기가 없다</label>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin-top:8px;padding:8px;background:#f8fafc;border-radius:8px;line-height:1.6">
+      ※ 4대유형작업: 크레인을 사용하는 작업, 고소작업자 등 건설기계를 사용하는 작업, 곤돌라 등을 사용하는 달비계 작업, 시운전 또는 Test 작업
     </div>
   </div>
 
-  <!-- 출입 후 현장 위험성평가 -->
-  <div class="section-header">
+  <div class="section-header" style="margin-top:8px">
     <h3>🏗️ 출입 후 현장 위험성평가</h3>
-    <p>위험 요인 체크 및 등급 선택</p>
+    <p>각 항목별 적정 / 보완 / 해당없음 선택</p>
   </div>
 
-  {% set categories = [
-    ('fire',     '🔥', '화재/폭발', [
-      '통풍로를 확보했습니까? (인근 포트, 작업물 등)',
-      '조 및 촉관의 다 사용했습니까?',
-      '작업 단면적 등 사항들이 적절하게 설정되었습니까?',
-      '소화기를 배치했습니까?',
-    ]),
-    ('height',   '🪜', '고소/추락', [
-      '발판들을 확보했습니까? (사다리 상태 여부)',
-      '4임의 대한 작업 적절하게 진행했습니까?',
-      '추락 방지망/안전대를 설치했습니까?',
-    ]),
-    ('electric', '⚡', '감전/전기', [
-      '전기를 사용하는 경우 접지 설치는 됩니까?',
-      '합선되지 않도록 피복 상태를 확인했습니까?',
-      '젖은 손으로 전기기구 취급하지 않습니까?',
-    ]),
-    ('chemical', '☣️', '화학/유해물질', [
-      '화학물질 취급 시 MSDS를 확인했습니까?',
-      '화학물질 보호구를 착용했습니까?',
-      '밀폐 공간 작업 전 산소농도를 측정했습니까?',
-    ]),
-    ('confined', '🚪', '밀폐공간', [
-      '밀폐 공간 출입 허가를 받았습니까?',
-      '환기 장비를 설치했습니까?',
-      '감시인을 배치했습니까?',
-    ]),
-    ('traffic',  '🚧', '교통/이동', [
-      '차량 출입 구역을 통제했습니까?',
-      '안전 통로를 확보했습니까?',
-      '야간 작업 시 조명을 확보했습니까?',
-    ]),
-    ('machinery','⚙️', '기계/장비', [
-      'LOTO(잠금장치) 절차를 적용했습니까?',
-      '회전체 방호 덮개를 설치했습니까?',
-      '장비 점검 기록을 확인했습니까?',
-    ]),
-    ('etc',      '📝', '기타', [
-      '기타 위험 요인이 있습니까?',
-      '현장 위험성평가 시 체크리스트에 없는 항목은 별도 기재하시오.',
-    ])
-  ] %}
-
-  {% for key, icon, label, items in categories %}
-  <div class="card">
-    <div class="card-title">{{ icon }} {{ label }}</div>
-    <div class="check-group">
-      {% for item in items %}
-      <label class="check-item">
-        <input type="checkbox" name="site_{{ key }}" value="{{ item }}">
-        <label>{{ item }}</label>
-      </label>
-      {% endfor %}
-    </div>
-    <div class="risk-row" style="margin-top:12px">
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">위험 빈도</div>
-        <select class="risk-select" name="risk_freq_{{ key }}">
-          <option value="">선택</option>
-          <option value="상">상 (자주)</option>
-          <option value="중">중 (가끔)</option>
-          <option value="하">하 (드물게)</option>
-        </select>
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">위험 강도</div>
-        <select class="risk-select" name="risk_severity_{{ key }}">
-          <option value="">선택</option>
-          <option value="대">대 (중대재해)</option>
-          <option value="중">중 (경상)</option>
-          <option value="소">소 (아차사고)</option>
-        </select>
-      </div>
-    </div>
-    <div style="margin-top:10px">
-      <div style="font-size:12px;color:#64748b;margin-bottom:4px">개선대책</div>
-      <textarea class="form-input" name="measure_{{ key }}" rows="2"
-        placeholder="개선대책 또는 조치사항 입력" style="resize:none"></textarea>
-    </div>
+  <div class="card" style="padding:10px 6px;overflow-x:auto">
+    <table class="risk-table">
+      <thead>
+        <tr>
+          <th style="width:34px">구분</th>
+          <th>유해/위험요인 파악 (체크리스트 항목)</th>
+          <th style="width:36px">적정</th>
+          <th style="width:36px">보완</th>
+          <th style="width:40px">해당<br>없음</th>
+          <th style="min-width:90px">개선대책</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cat-cell" rowspan="3">작업장
+관리</td>
+          <td class="item-cell">통행로는 확보되었는가? (전도, 붕괴, 낙하물 여부)</td>
+          <td class="check-cell"><label><input type="radio" name="site_mgmt_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mgmt_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mgmt_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="3"><textarea name="measure_mgmt" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">조명 및 환기관리는 적절한가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_mgmt_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mgmt_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mgmt_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="item-cell">작업장 내 개구부는 확인하고 조치가 되었는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_mgmt_3" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mgmt_3" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mgmt_3" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="1">안전
+시설물</td>
+          <td class="item-cell">측정/난간대 등 시설물이 적절하게 설치되었는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_fac_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_fac_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_fac_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell"><textarea name="measure_facility" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="2">작업
+허가서</td>
+          <td class="item-cell">해당 작업이 허가서 대상 작업인가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_pmt_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_pmt_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_pmt_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="2"><textarea name="measure_permit" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">대상 작업인 경우 적합한 허가서가 발행되었는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_pmt_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_pmt_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_pmt_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="5">밀폐
+구역</td>
+          <td class="item-cell">밀폐구역에 해당되는가? (사업이 상시 출입하지 않는 구역)</td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="5"><textarea name="measure_confined" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">밀폐구역 측정기준을 알고 있는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="item-cell">산소농도 측정기는 보유하고 있는가?<small>※ 가스측정교육 未이수자 작업금지</small></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_3" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_3" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_3" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="item-cell">감시자는 배치 하였는가?<small>※ 감시자 교육 이수자 없을 시 작업금지</small></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_4" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_4" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_4" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="item-cell">환기가 미흡한 경우 환기를 위한 장치는 설치되어 있는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_5" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_5" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_conf_5" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="5">고소
+작업</td>
+          <td class="item-cell">추락위험구간 내 생명줄/안전블록은 설치 되었는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="5"><textarea name="measure_height" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">족장이 없는 경우 사외 작업자 생명줄 설치 금지<small>※ 족장이 없는 경우 사외작업자 작업금지</small></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="item-cell">적절한 발판이 설치되어 있는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_3" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_3" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_3" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="item-cell">안전벨트를 체결할 수 있는 적절한 조치가 되었는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_4" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_4" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_4" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="item-cell">무자격자 사내 고소작업기계 사용금지<small>※ 사외작업자 사내 고소작업기계 사용금지</small></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_5" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_5" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_hgt_5" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="2">화재
+폭발</td>
+          <td class="item-cell">불티 비산방지 조치는 되었는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_fire_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_fire_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_fire_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="2"><textarea name="measure_fire" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">화기작업 시 이면은 확인 하였는가? (이면에 가연물 등)</td>
+          <td class="check-cell"><label><input type="radio" name="site_fire_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_fire_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_fire_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="2">화학
+물질</td>
+          <td class="item-cell">화학물질의 사용이 있는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_chem_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_chem_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_chem_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="2"><textarea name="measure_chemical" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">MSDS는 보유하고 게시되어 있는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_chem_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_chem_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_chem_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="2">설비</td>
+          <td class="item-cell">끼임사고에 유의, 반드시 전원을 차단하고 장비를 점검할것</td>
+          <td class="check-cell"><label><input type="radio" name="site_equip_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_equip_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_equip_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="2"><textarea name="measure_equip" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">활선, 정전 작업의 경우 필히 LOTO 실시</td>
+          <td class="check-cell"><label><input type="radio" name="site_equip_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_equip_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_equip_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="2">운반</td>
+          <td class="item-cell">무자격자 사내 신호수역할 금지</td>
+          <td class="check-cell"><label><input type="radio" name="site_trans_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_trans_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_trans_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="2"><textarea name="measure_transport" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">권상을 하부 출입금지 및 양중작업 시 하부를 통제 할 것</td>
+          <td class="check-cell"><label><input type="radio" name="site_trans_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_trans_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_trans_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="2">중장비</td>
+          <td class="item-cell">무자격자 사내 중장비 운행 금지</td>
+          <td class="check-cell"><label><input type="radio" name="site_heavy_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_heavy_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_heavy_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="2"><textarea name="measure_heavy" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">중장비 사용 시 유도자 필히 배치 / 부딪힘 사고유의</td>
+          <td class="check-cell"><label><input type="radio" name="site_heavy_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_heavy_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_heavy_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell" rowspan="2">기계</td>
+          <td class="item-cell">움직이는 기계/장비에 끼임은 확인 하였는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_mach_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mach_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mach_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell" rowspan="2"><textarea name="measure_machine" placeholder="개선대책 입력"></textarea></td>
+        </tr>
+        <tr>
+          <td class="item-cell">전기 충전 및 전기 작업 중 감전의 위험은 없는가?</td>
+          <td class="check-cell"><label><input type="radio" name="site_mach_2" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mach_2" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_mach_2" value="해당없음" checked> ✓</label></td>
+        </tr>
+        <tr>
+          <td class="cat-cell">기타</td>
+          <td class="item-cell">기타 위험요인<small>※ 체크리스트에 없는 항목은 기타에 수기작성</small></td>
+          <td class="check-cell"><label><input type="radio" name="site_etc_1" value="적정"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_etc_1" value="보완"> ✓</label></td>
+          <td class="check-cell"><label><input type="radio" name="site_etc_1" value="해당없음" checked> ✓</label></td>
+          <td class="measure-cell"><textarea name="measure_etc" placeholder="기타 위험요인 및 개선대책 입력"></textarea></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
-  {% endfor %}
 
-  <!-- 제출 버튼 -->
-  <button type="submit" class="btn btn-primary" style="margin-top:8px">
+  <button type="submit" class="btn btn-primary" id="submit-btn" style="margin-top:8px;opacity:.4;cursor:not-allowed" disabled>
     📤 위험성평가 제출
   </button>
+  <div id="submit-msg" style="text-align:center;font-size:13px;color:#94a3b8;margin-top:8px">
+    위 조건을 모두 충족해야 제출 가능합니다
+  </div>
   <div style="height:20px"></div>
 </form>
 
 <script>
-// 오프라인 저장 지원
+// ── 제출 버튼 활성화 검사 ──────────────────────────
+const BASIC_FIELDS = ['company','work_place','work_name','work_date','sign_requester'];
+
+// 출입 전 라디오 name 목록
+const PRE_NAMES = [
+  'pre_1_1','pre_1_2','pre_1_3',
+  'pre_2_1','pre_2_2','pre_2_3',
+  'pre_3_1','pre_3_2','pre_3_3',
+  'pre_4_1','pre_4_2',
+  'pre_5_1','pre_5_2'
+];
+
+// 출입 후 라디오 name 목록
+const SITE_NAMES = [
+  'site_mgmt_1','site_mgmt_2','site_mgmt_3',
+  'site_fac_1',
+  'site_pmt_1','site_pmt_2',
+  'site_conf_1','site_conf_2','site_conf_3','site_conf_4','site_conf_5',
+  'site_hgt_1','site_hgt_2','site_hgt_3','site_hgt_4','site_hgt_5',
+  'site_fire_1','site_fire_2',
+  'site_chem_1','site_chem_2',
+  'site_equip_1','site_equip_2',
+  'site_trans_1','site_trans_2',
+  'site_heavy_1','site_heavy_2',
+  'site_mach_1','site_mach_2',
+  'site_etc_1'
+];
+
+function checkForm() {
+  const form = document.getElementById('assessment-form');
+  const btn = document.getElementById('submit-btn');
+  const msg = document.getElementById('submit-msg');
+  const reasons = [];
+
+  // 1. 기본 정보 확인
+  const basicOk = BASIC_FIELDS.every(name => {
+    const el = form.querySelector(`[name="${name}"]`);
+    return el && el.value.trim() !== '';
+  });
+
+  // 작업자 서명 검사 (1인: sign_worker 1개, 2인이상: sign_worker_1 최소 1개)
+  const workerCount = document.getElementById('worker_count').value;
+  let workerSignOk = false;
+  if (workerCount === '2인 이상') {
+    const first = form.querySelector('[name="sign_worker_1"]');
+    workerSignOk = first && first.value.trim() !== '';
+  } else {
+    const w = form.querySelector('[name="sign_worker"]');
+    workerSignOk = w && w.value.trim() !== '';
+  }
+
+  if (!basicOk || !workerSignOk) reasons.push('📋 기본 정보 및 서명란을 모두 입력해주세요');
+  const allBasicOk = basicOk && workerSignOk;
+
+  // 2. 출입 전 전체 선택 확인
+  const preOk = PRE_NAMES.every(name => {
+    return form.querySelector(`input[name="${name}"]:checked`);
+  });
+  if (!preOk) reasons.push('🔍 출입 전 사전 위험성평가 항목을 모두 선택해주세요');
+
+  // 3. 출입 후 최소 1개 이상 적정/보완 선택 확인
+  const siteHasReal = SITE_NAMES.some(name => {
+    const checked = form.querySelector(`input[name="${name}"]:checked`);
+    return checked && checked.value !== '해당없음';
+  });
+  if (!siteHasReal) reasons.push('🏗️ 출입 후 현장 위험성평가에서 최소 1개 이상 적정 또는 보완을 선택해주세요');
+
+  const allOk = allBasicOk && preOk && siteHasReal;
+  btn.disabled = !allOk;
+  btn.style.opacity = allOk ? '1' : '0.4';
+  btn.style.cursor = allOk ? 'pointer' : 'not-allowed';
+  msg.innerHTML = allOk
+    ? '<span style="color:#10b981">✅ 제출 가능합니다</span>'
+    : reasons.map(r => `<div style="margin-bottom:2px">${r}</div>`).join('');
+}
+
+// 이벤트 바인딩 (입력/변경 시 검사)
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('assessment-form');
+  form.addEventListener('input', checkForm);
+  form.addEventListener('change', checkForm);
+  checkForm(); // 초기 실행
+});
+
+function toggleWorkerFields() {
+  const val = document.getElementById('worker_count').value;
+  document.getElementById('sign_2person').style.display = val === '2인 이상' ? 'block' : 'none';
+
+  const container = document.getElementById('sign_worker_inputs');
+  if (val === '2인 이상') {
+    // 10개 입력칸 생성
+    container.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      const input = document.createElement('input');
+      input.className = 'form-input';
+      input.type = 'text';
+      input.name = `sign_worker_${i}`;
+      input.placeholder = `작업자 ${i} 성명`;
+      input.style.marginBottom = '8px';
+      container.appendChild(input);
+    }
+  } else {
+    // 1인 단독: 1개만
+    container.innerHTML = '<input class="form-input" type="text" name="sign_worker" placeholder="임시출입 작업자 성명" style="margin-bottom:8px">';
+  }
+  checkForm();
+}
+
 document.getElementById('assessment-form').addEventListener('submit', function(e) {
   if (!navigator.onLine) {
     e.preventDefault();
@@ -257,30 +558,6 @@ document.getElementById('assessment-form').addEventListener('submit', function(e
     localStorage.setItem('pending_assessments', JSON.stringify(pending));
     alert('오프라인 상태입니다. 인터넷 연결 시 자동으로 제출됩니다.');
     history.back();
-  }
-});
-
-// 온라인 복구 시 자동 재제출
-window.addEventListener('online', function() {
-  const pending = JSON.parse(localStorage.getItem('pending_assessments') || '[]');
-  if (pending.length > 0) {
-    if (confirm(`오프라인 저장된 평가 ${pending.length}건을 제출할까요?`)) {
-      pending.forEach(item => {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/assessment/new';
-        Object.entries(item.data).forEach(([k, v]) => {
-          [].concat(v).forEach(val => {
-            const input = document.createElement('input');
-            input.type = 'hidden'; input.name = k; input.value = val;
-            form.appendChild(input);
-          });
-        });
-        document.body.appendChild(form);
-        form.submit();
-      });
-      localStorage.removeItem('pending_assessments');
-    }
   }
 });
 </script>
