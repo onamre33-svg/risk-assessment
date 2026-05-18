@@ -441,6 +441,24 @@
     </table>
   </div>
 
+  <!-- 위험성 고지 확인 -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-title">⚠️ 위험성 고지 확인</div>
+    <label style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:#fff8f0;border:2px solid #f59e0b;border-radius:12px;cursor:pointer;">
+      <input type="checkbox" name="risk_acknowledged" id="risk_acknowledged" value="yes"
+        style="width:20px;height:20px;accent-color:#f59e0b;flex-shrink:0;margin-top:2px">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:4px">
+          위험성에 대하여 고지 받았음
+        </div>
+        <div style="font-size:12px;color:#b45309;line-height:1.6">
+          본인은 위 위험성평가의 내용을 충분히 숙지하였으며,<br>
+          작업 중 발생할 수 있는 위험성에 대하여 고지 받았음을 확인합니다.
+        </div>
+      </div>
+    </label>
+  </div>
+
   <button type="submit" class="btn btn-primary" id="submit-btn" style="margin-top:8px;opacity:.4;cursor:not-allowed" disabled>
     📤 위험성평가 제출
   </button>
@@ -518,7 +536,11 @@ function checkForm() {
   });
   if (!siteHasReal) reasons.push('🏗️ 출입 후 현장 위험성평가에서 최소 1개 이상 적정 또는 보완을 선택해주세요');
 
-  const allOk = allBasicOk && preOk && siteHasReal;
+  // 4. 위험성 고지 확인
+  const ackOk = !!form.querySelector('#risk_acknowledged:checked');
+  if (!ackOk) reasons.push('⚠️ 위험성 고지 확인을 체크해주세요');
+
+  const allOk = allBasicOk && preOk && siteHasReal && ackOk;
   btn.disabled = !allOk;
   btn.style.opacity = allOk ? '1' : '0.4';
   btn.style.cursor = allOk ? 'pointer' : 'not-allowed';
