@@ -78,6 +78,10 @@ def init_db():
     except:
         pass
     try:
+        c.execute("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS signature TEXT")
+    except:
+        pass
+    try:
         c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS team_ids TEXT")
     except:
         pass
@@ -428,12 +432,13 @@ def approve_assessment(aid):
         return jsonify({'error': '권한 없음'}), 403
     data = request.get_json() or {}
     reviewer_name = data.get('reviewer_name', u['name'])
+    signature = data.get('signature', '')
     conn = get_db()
     c = conn.cursor()
     c.execute("SELECT * FROM assessments WHERE id=%s", (aid,))
     a = fetchone(c)
-    c.execute("UPDATE assessments SET status='approved', reviewed_at=%s, reviewer_id=%s, sign_responsible=%s WHERE id=%s",
-              (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), u['id'], reviewer_name, aid))
+    c.execute("UPDATE assessments SET status='approved', reviewed_at=%s, reviewer_id=%s, sign_responsible=%s, signature=%s WHERE id=%s",
+              (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), u['id'], reviewer_name, signature, aid))
     conn.commit()
     conn.close()
     add_notification(a['engineer_id'], f"✅ 위험성평가가 승인되었습니다. 승인자: {reviewer_name}", aid)
