@@ -29,12 +29,18 @@
   </div>
 </div>
 {% elif a.status == 'approved' %}
-<div style="background:#d1fae5;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+<div style="background:#d1fae5;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px">
   <span style="font-size:24px">✅</span>
-  <div>
+  <div style="flex:1">
     <div style="font-weight:600;color:#065f46">승인 완료 - 작업 진행 가능</div>
     <div style="font-size:13px;color:#065f46;opacity:.8">승인일시: {{ a.reviewed_at }}</div>
     <div style="font-size:13px;color:#065f46;opacity:.8">승인자: {{ a['sign_responsible'] or '-' }}</div>
+    {% if a.get('signature') %}
+    <div style="margin-top:10px">
+      <div style="font-size:12px;color:#065f46;margin-bottom:4px;font-weight:600">✍️ 승인자 서명</div>
+      <img src="{{ a['signature'] }}" style="border:1.5px solid #a7f3d0;border-radius:8px;background:white;max-width:240px;width:100%;">
+    </div>
+    {% endif %}
   </div>
 </div>
 {% else %}
