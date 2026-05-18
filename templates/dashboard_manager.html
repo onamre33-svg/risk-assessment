@@ -26,37 +26,41 @@
   </div>
 </div>
 
-{% set pending_list = assessments|selectattr('status','eq','pending')|list %}
-{% if pending_list %}
-<div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:8px;padding:0 2px">
-  ⏳ 승인 대기 ({{ pending_list|length }}건)
+<!-- 상태 필터 -->
+<div style="display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px">
+  <button onclick="filterStatus('all')" id="filter-all"
+    style="padding:7px 16px;border-radius:20px;border:none;background:#1a73e8;color:white;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">전체</button>
+  <button onclick="filterStatus('pending')" id="filter-pending"
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⏳ 대기</button>
+  <button onclick="filterStatus('approved')" id="filter-approved"
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">✅ 승인</button>
+  <button onclick="filterStatus('rejected')" id="filter-rejected"
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">❌ 반려</button>
 </div>
-{% for a in pending_list %}
-<a class="list-item" href="/assessment/{{ a.id }}" style="border-left:4px solid #f59e0b">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start">
-    <div class="list-item-title">{{ a.work_name or '작업명 미입력' }}</div>
-    <span class="badge badge-pending">⏳ 대기</span>
-  </div>
-  <div class="list-item-meta">
-    <span>👷 {{ a.engineer_name }}</span>
-    <span>📍 {{ a.work_place }}</span>
-    <span>📅 {{ a.work_date }}</span>
-  </div>
-</a>
-{% endfor %}
-<div style="margin-bottom:20px"></div>
+
+<!-- 호선 필터 -->
+{% set team_names = assessments|map(attribute='team_name')|unique|list %}
+{% if team_names %}
+<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px">
+  <button id="team-all"
+    style="padding:6px 14px;border-radius:20px;border:none;background:#1a73e8;color:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">🚢 전체 호선</button>
+  {% for team in team_names %}
+  <button onclick="filterTeam(this, '{{ team }}')"
+    style="padding:6px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">{{ team }}</button>
+  {% endfor %}
+</div>
 {% endif %}
 
-{% set done_list = assessments|rejectattr('status','eq','pending')|list %}
-{% if done_list %}
-<div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:8px;padding:0 2px">
-  처리 완료 ({{ done_list|length }}건)
-</div>
-{% for a in done_list %}
-<a class="list-item" href="/assessment/{{ a.id }}">
+<!-- 평가 목록 -->
+{% for a in assessments %}
+<a class="list-item assessment-item" href="/assessment/{{ a.id }}"
+  data-status="{{ a.status }}" data-team="{{ a.team_name }}"
+  style="{% if a.status == 'pending' %}border-left:4px solid #f59e0b{% endif %}">
   <div style="display:flex;justify-content:space-between;align-items:flex-start">
     <div class="list-item-title">{{ a.work_name or '작업명 미입력' }}</div>
-    {% if a.status == 'approved' %}
+    {% if a.status == 'pending' %}
+      <span class="badge badge-pending">⏳ 대기</span>
+    {% elif a.status == 'approved' %}
       <span class="badge badge-approved">✅ 승인</span>
     {% else %}
       <span class="badge badge-rejected">❌ 반려</span>
@@ -64,19 +68,17 @@
   </div>
   <div class="list-item-meta">
     <span>👷 {{ a.engineer_name }}</span>
+    <span>🚢 {{ a.team_name }}</span>
     <span>📍 {{ a.work_place }}</span>
     <span>📅 {{ a.work_date }}</span>
   </div>
 </a>
-{% endfor %}
-{% endif %}
-
-{% if not assessments %}
+{% else %}
 <div class="empty-state">
   <div class="empty-icon">📭</div>
   <div class="empty-text">제출된 위험성평가가 없습니다</div>
 </div>
-{% endif %}
+{% endfor %}
 
 <!-- 호선 추가 모달 -->
 <div id="addTeamModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;">
@@ -89,18 +91,52 @@
     </div>
     <div style="display:flex;gap:10px;">
       <button onclick="closeAddTeamModal()"
-        style="flex:1;padding:11px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
-        취소
-      </button>
+        style="flex:1;padding:11px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">취소</button>
       <button onclick="submitAddTeam()"
-        style="flex:1;padding:11px;background:#1a73e8;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
-        추가
-      </button>
+        style="flex:1;padding:11px;background:#1a73e8;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">추가</button>
     </div>
   </div>
 </div>
 
 <script>
+let currentStatus = 'all';
+let currentTeam = 'all';
+let activeTeamBtn = document.getElementById('team-all');
+
+function applyFilters() {
+  document.querySelectorAll('.assessment-item').forEach(el => {
+    const statusOk = currentStatus === 'all' || el.dataset.status === currentStatus;
+    const teamOk = currentTeam === 'all' || el.dataset.team === currentTeam;
+    el.style.display = (statusOk && teamOk) ? 'block' : 'none';
+  });
+}
+
+function filterStatus(status) {
+  currentStatus = status;
+  ['all','pending','approved','rejected'].forEach(s => {
+    const btn = document.getElementById('filter-' + s);
+    if (s === status) { btn.style.background='#1a73e8'; btn.style.color='white'; btn.style.border='none'; }
+    else { btn.style.background='white'; btn.style.color='#666'; btn.style.border='1.5px solid #e0e0e0'; }
+  });
+  applyFilters();
+}
+
+function filterTeam(btn, team) {
+  currentTeam = team || 'all';
+  if (activeTeamBtn) {
+    activeTeamBtn.style.background = 'white';
+    activeTeamBtn.style.color = '#666';
+    activeTeamBtn.style.border = '1.5px solid #e0e0e0';
+  }
+  btn.style.background = '#1a73e8';
+  btn.style.color = 'white';
+  btn.style.border = 'none';
+  activeTeamBtn = btn;
+  applyFilters();
+}
+
+document.getElementById('team-all').onclick = function() { filterTeam(this, 'all'); };
+
 function openAddTeamModal() {
   document.getElementById('addTeamModal').style.display = 'flex';
   setTimeout(() => document.getElementById('newTeamName').focus(), 100);
