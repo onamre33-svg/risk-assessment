@@ -377,7 +377,10 @@ def new_assessment():
 
     conn = get_db()
     c = conn.cursor()
-    # 소속 호선 목록 가져오기
+    # 전체 호선 목록 가져오기 (새로 추가된 호선도 보이도록)
+    c.execute("SELECT * FROM teams ORDER BY name")
+    all_teams = fetchall(c)
+    # 소속 호선 목록 (기본 선택용)
     my_teams = []
     if team_ids:
         placeholders = ','.join(['%s'] * len(team_ids))
@@ -387,7 +390,7 @@ def new_assessment():
 
     return render_template('assessment_form.html', u=u,
                            team=my_teams[0] if my_teams else None,
-                           my_teams=my_teams,
+                           my_teams=all_teams,
                            today=datetime.now().strftime('%Y-%m-%d'))
 
 # ── 평가 상세 ───────────────────────────────────────────
