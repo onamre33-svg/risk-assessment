@@ -26,9 +26,34 @@
   👥 사용자 · 팀 관리
 </a>
 
-<div class="card-title" style="margin-bottom:10px">최근 위험성평가</div>
+<!-- 상태 필터 -->
+<div style="display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px">
+  <button onclick="filterStatus('all')" id="filter-all"
+    style="padding:7px 16px;border-radius:20px;border:none;background:#1a73e8;color:white;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">전체</button>
+  <button onclick="filterStatus('pending')" id="filter-pending"
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⏳ 대기</button>
+  <button onclick="filterStatus('approved')" id="filter-approved"
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">✅ 승인</button>
+  <button onclick="filterStatus('rejected')" id="filter-rejected"
+    style="padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">❌ 반려</button>
+</div>
+
+<!-- 호선 필터 -->
+{% set team_names = assessments|map(attribute='team_name')|unique|list %}
+{% if team_names %}
+<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px">
+  <button id="team-all"
+    style="padding:6px 14px;border-radius:20px;border:none;background:#1a73e8;color:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">🚢 전체 호선</button>
+  {% for team in team_names %}
+  <button onclick="filterTeam(this, '{{ team }}')"
+    style="padding:6px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;color:#666;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">{{ team }}</button>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- 평가 목록 -->
 {% for a in assessments %}
-<a class="list-item" href="/assessment/{{ a.id }}">
+<a class="list-item assessment-item" href="/assessment/{{ a.id }}" data-status="{{ a.status }}" data-team="{{ a.team_name }}">
   <div style="display:flex;justify-content:space-between;align-items:flex-start">
     <div class="list-item-title">{{ a.work_name or '작업명 미입력' }}</div>
     {% if a.status == 'pending' %}
@@ -41,7 +66,7 @@
   </div>
   <div class="list-item-meta">
     <span>👷 {{ a.engineer_name }}</span>
-    <span>🏢 {{ a.team_name }}</span>
+    <span>🚢 {{ a.team_name }}</span>
     <span>📍 {{ a.work_place }}</span>
     <span>📅 {{ a.submitted_at[:10] }}</span>
   </div>
@@ -52,4 +77,44 @@
   <div class="empty-text">아직 제출된 평가가 없습니다</div>
 </div>
 {% endfor %}
+
+<script>
+let currentStatus = 'all';
+let currentTeam = 'all';
+let activeTeamBtn = document.getElementById('team-all');
+
+function applyFilters() {
+  document.querySelectorAll('.assessment-item').forEach(el => {
+    const statusOk = currentStatus === 'all' || el.dataset.status === currentStatus;
+    const teamOk = currentTeam === 'all' || el.dataset.team === currentTeam;
+    el.style.display = (statusOk && teamOk) ? 'block' : 'none';
+  });
+}
+
+function filterStatus(status) {
+  currentStatus = status;
+  ['all','pending','approved','rejected'].forEach(s => {
+    const btn = document.getElementById('filter-' + s);
+    if (s === status) { btn.style.background='#1a73e8'; btn.style.color='white'; btn.style.border='none'; }
+    else { btn.style.background='white'; btn.style.color='#666'; btn.style.border='1.5px solid #e0e0e0'; }
+  });
+  applyFilters();
+}
+
+function filterTeam(btn, team) {
+  currentTeam = team || 'all';
+  if (activeTeamBtn) {
+    activeTeamBtn.style.background = 'white';
+    activeTeamBtn.style.color = '#666';
+    activeTeamBtn.style.border = '1.5px solid #e0e0e0';
+  }
+  btn.style.background = '#1a73e8';
+  btn.style.color = 'white';
+  btn.style.border = 'none';
+  activeTeamBtn = btn;
+  applyFilters();
+}
+
+document.getElementById('team-all').onclick = function() { filterTeam(this, 'all'); };
+</script>
 {% endblock %}
